@@ -137,3 +137,48 @@ tbody tr:nth-child(even):hover{background:#f0f6ff}
 .toast{position:fixed;bottom:30px;right:30px;background:#1e293b;color:#fff;padding:12px 20px;border-radius:8px;font-size:13.5px;z-index:200;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;transform:translateY(10px);transition:all .2s}
 .toast.show{opacity:1;transform:none}
 .toast.ok{background:#16a34a}.toast.err{background:#dc2626}
+
+/* ===== Supabase 首次配置屏 ===== */
+#setupScreen{position:fixed;inset:0;background:linear-gradient(135deg,#f0f5fb,#e8eef7);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.setup-box{background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(26,68,128,.18);padding:38px 40px;width:460px;max-width:100%;text-align:center}
+.setup-logo{font-size:44px}
+.setup-box h2{margin:10px 0 4px;font-size:20px;color:var(--blue-deep)}
+.setup-sub{color:var(--muted);font-size:13.5px;margin-bottom:18px}
+.setup-box label{display:block;text-align:left;font-size:12.5px;font-weight:600;color:var(--muted);margin:12px 0 4px}
+.setup-box input,.setup-box textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:Consolas,monospace;outline:none;resize:vertical}
+.setup-box input:focus,.setup-box textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(33,84,165,.12)}
+.setup-btn{width:100%;margin-top:16px;background:var(--blue);color:#fff;padding:11px;font-size:15px;font-weight:600;border-radius:8px}
+.setup-btn:hover{filter:brightness(.95)}
+.setup-err{color:#dc2626;font-size:12.5px;margin-top:10px;min-height:16px;text-align:left}
+.setup-tip{color:#94a3b8;font-size:11.5px;margin-top:12px;line-height:1.6}
+
+/* ===== 工作看板 ===== */
+#boardContainer .board-sec{margin-bottom:18px}
+.sec-name{border:1px solid transparent;background:transparent;font-size:15.5px;font-weight:700;color:var(--blue-deep);padding:4px 10px;border-radius:6px;width:340px;max-width:60%;outline:none}
+.sec-name:hover{border-color:var(--border)}
+.sec-name:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(33,84,165,.12)}
+.task-list{padding:6px 14px}
+.task-card{border:1px solid #eef1f6;border-radius:9px;padding:10px 12px;margin:8px 0;background:#fbfcfe}
+.task-card:hover{border-color:#d7e3f4}
+.task-line{display:flex;gap:8px;align-items:center;margin:4px 0;flex-wrap:wrap}
+.task-status{padding:5px 8px;border-radius:6px;border:1px solid var(--border);font-size:12.5px;font-weight:600;background:#fff}
+.task-title{flex:1;min-width:200px;padding:6px 10px;border:1px solid transparent;border-radius:6px;font-size:14px;font-weight:600;background:transparent;outline:none}
+.task-title:hover{border-color:var(--border)}
+.task-title:focus{border-color:var(--blue);background:#fff}
+.task-note{flex:1;min-width:240px;padding:5px 10px;border:1px solid transparent;border-radius:6px;font-size:12.5px;color:var(--muted);background:transparent;outline:none}
+.task-note:hover{border-color:var(--border)}
+.task-note:focus{border-color:var(--blue);background:#fff;color:var(--text)}
+.files-line{padding-top:2px}
+.file-chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;background:#fff;border:1px dashed var(--border);border-radius:999px;padding:4px 12px;color:var(--muted)}
+.file-chip:not(.empty){border-style:solid;border-color:#bbe7cc;background:#f0fcf5;color:#0f7a37}
+.file-chip a{color:inherit;font-weight:600;text-decoration:none;word-break:break-all}
+.file-chip a:hover{text-decoration:underline}
+.chip-btn{background:none;border:none;color:var(--muted);font-size:12px;padding:0 4px;cursor:pointer}
+.chip-btn:hover{color:var(--blue)}
+.btn-sm{padding:4px 10px;font-size:12.5px}
+.sec-foot{padding:6px 14px 12px}
+.file-group{margin-bottom:8px}
+.file-group h4{font-size:13px;color:var(--blue);margin:10px 0 6px 4px}
+.fcard-static{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:13px}
+.fcard-static .fname{flex:1;word-break:break-all;font-weight:500}
+.files-grid{padding:18px}

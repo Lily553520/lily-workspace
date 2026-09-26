@@ -31,6 +31,7 @@
 <!-- ======= Tab 导航 ======= -->
 <nav class="tabs" id="mainTabs">
   <button class="tab active" data-view="attendance">日出勤表</button>
+  <button class="tab" data-view="board">🗂 工作看板</button>
   <button class="tab" data-view="window">旷窗口监控</button>
   <button class="tab" data-view="attrition">流失率报表</button>
   <button class="tab" data-view="memory">内存报表</button>
@@ -99,6 +100,22 @@
         </div>
       </div>
     </div>
+  </section>
+
+  <!-- ======= 视图:工作看板 ======= -->
+  <section class="view" id="view-board">
+    <div class="toolbar">
+      <div class="tb-group">
+        <span class="tb-label">🗂 工作看板 — 栏目名可直接改,文件上传给 AI 处理,完成后在任务里下载</span>
+      </div>
+      <div class="tb-sep"></div>
+      <div class="tb-group">
+        <button class="btn btn-green" id="btnSecAdd">＋ 添加栏目</button>
+        <button class="btn btn-outline" id="btnBoardRefresh">刷新</button>
+        <button class="btn btn-gray" id="btnBoardLogs">操作日志</button>
+      </div>
+    </div>
+    <div id="boardContainer"></div>
   </section>
 
   <!-- ======= 视图2:旷窗口监控 ======= -->
@@ -200,7 +217,7 @@
   <section class="view" id="view-files">
     <div class="toolbar">
       <div class="tb-group">
-        <span class="tb-label">📁 AI 助手上传的源文件</span>
+        <span class="tb-label">☁️ 云端文件库(Supabase Storage)</span>
       </div>
       <div class="tb-sep"></div>
       <div class="tb-group">
@@ -210,19 +227,20 @@
     </div>
     <div class="panel">
       <div class="panel-head">
-        <h3>源文件列表</h3>
+        <h3>文件列表</h3>
         <span class="badge" id="fileCount">0 个</span>
       </div>
       <div class="files-grid" id="filesGrid">
         <div class="empty-inline">加载中…</div>
       </div>
-      <p class="files-hint">💡 需要上传文件时,直接对 AI 助手说「把 xx 文件放到工作区源文件里」即可,上传后刷新本页可见。</p>
+      <p class="files-hint">💡 在「🗂 工作看板」上传文件给 AI 处理;AI 完成的 Excel 会出现在对应任务和本页 output/ 目录。</p>
     </div>
   </section>
 </main>
 
 <footer class="footer">
-  考勤数据管理平台 · 数据保存在本机浏览器(localStorage) · 托管于 GitHub Pages · <span id="footDate"></span>
+  考勤数据管理平台 · 数据实时保存于 Supabase 云端数据库 · 托管于 GitHub Pages ·
+  <a href="#" id="sbReset" style="color:var(--blue)">Supabase 设置</a> · <span id="footDate"></span>
 </footer>
 
 <!-- ======= 弹窗:Group规则 ======= -->
@@ -291,8 +309,10 @@
 </div>
 
 <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
+<input type="file" id="taskFileInput" hidden>
 
 <script src="assets/xlsx.full.min.js"></script>
+<script src="assets/supabase.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>
