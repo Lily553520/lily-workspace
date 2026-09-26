@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的文件工作区</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #1f2328;
+    --muted: #656d76;
+    --accent: #0969da;
+    --border: #d8dee4;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #0d1117 0%, #1a2233 100%);
+    color: #fff;
+    padding: 40px 20px 32px;
+    text-align: center;
+  }
+  header h1 { font-size: 26px; font-weight: 700; letter-spacing: 1px; }
+  header p { margin-top: 8px; color: #8b949e; font-size: 14px; }
+  header .meta { margin-top: 12px; font-size: 13px; color: #58a6ff; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 24px 16px 60px; }
+  .toolbar {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .toolbar input {
+    flex: 1; min-width: 220px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    background: var(--card);
+  }
+  .toolbar input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(9,105,218,.15); }
+  .stats { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .date-group { margin-bottom: 28px; }
+  .date-group h2 {
+    font-size: 15px; color: var(--muted); font-weight: 600;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .date-group h2::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  a.card {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  a.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(31,35,40,.10);
+    border-color: var(--accent);
+  }
+  .icon {
+    width: 42px; height: 42px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px; font-size: 20px;
+    background: #eef4fc;
+  }
+  .card .name {
+    font-weight: 600; font-size: 14.5px;
+    word-break: break-all; line-height: 1.35;
+  }
+  .card .note {
+    margin-top: 4px; font-size: 13px; color: var(--muted);
+    word-break: break-all; line-height: 1.4;
+  }
+  .card .tags { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 11.5px; padding: 2px 8px; border-radius: 999px;
+    background: #f0f2f4; color: var(--muted);
+  }
+  .tag.type { background: #ddf4ff; color: #0550ae; font-weight: 600; }
+  .empty {
+    text-align: center; color: var(--muted); padding: 60px 0;
+  }
+  .empty .big { font-size: 44px; margin-bottom: 12px; }
+  footer {
+    text-align: center; color: var(--muted);
+    font-size: 12.5px; padding: 20px; border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>📁 我的文件工作区</h1>
+  <p>AI 助手生成的文件集中管理 · 长期固定 · 持续更新</p>
+  <div class="meta">最后更新:<span id="updated">加载中…</span></div>
+</header>
+
+<div class="wrap">
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="🔍 搜索文件名或备注…">
+    <span class="stats" id="stats"></span>
+  </div>
+  <div id="list"><div class="empty"><div class="big">⏳</div>正在加载文件列表…</div></div>
+</div>
+
+<footer>
+  由 AI 助手自动维护 · 页面与文件托管于 GitHub Pages ·
+  <a href="https://github.com/" target="_blank" rel="noopener">前往 GitHub 编辑</a>
+</footer>
+
+<script>
+const ICONS = {
+  xlsx:'📊', xls:'📊', csv:'📊', doc:'📄', docx:'📄', txt:'📝', md:'📝',
+  pdf:'📕', ppt:'📽️', pptx:'📽️', html:'🌐', htm:'🌐',
+  png:'🖼️', jpg:'🖼️', jpeg:'🖼️', gif:'🖼️', webp:'🖼️', svg:'🖼️',
+  zip:'🗜️', rar:'🗜️', '7z':'🗜️', json:'🧩', js:'📜', py:'🐍',
+  mp3:'🎵', mp4:'🎬', mov:'🎬', wav:'🎵', default:'📎'
+};
+const COLORS = {
+  xlsx:'#d8f5d8', pdf:'#fde3e3', doc:'#e3edfd', docx:'#e3edfd',
+  ppt:'#fdf0e3', pptx:'#fdf0e3', html:'#efe3fd', png:'#e8f5f0',
+  jpg:'#e8f5f0', jpeg:'#e8f5f0', csv:'#fff3d6'
+};
+function extOf(name){ const m = name.toLowerCase().match(/\.([a-z0-9]+)$/); return m ? m[1] : ''; }
+function iconOf(name){ return ICONS[extOf(name)] || ICONS.default; }
+function colorOf(name){ return COLORS[extOf(name)] || '#eef4fc'; }
+function esc(s){ const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+let DATA = { files: [] };
+
+function render(q) {
+  q = (q || '').trim().toLowerCase();
+  const list = document.getElementById('list');
+  const files = DATA.files.filter(f =>
+    !q || f.name.toLowerCase().includes(q) || (f.note || '').toLowerCase().includes(q)
+  );
+  document.getElementById('stats').textContent =
+    `共 ${DATA.files.length} 个文件` + (q ? ` · 匹配 ${files.length} 个` : '');
+
+  if (!files.length) {
+    list.innerHTML = `<div class="empty"><div class="big">${q ? '🔍' : '📭'}</div>${
+      q ? '没有匹配的文件' : '工作区还是空的,让 AI 助手帮你导出第一个文件吧'}</div>`;
+    return;
+  }
+  const groups = {};
+  files.forEach(f => { (groups[f.date] = groups[f.date] || []).push(f); });
+  const dates = Object.keys(groups).sort().reverse();
+  list.innerHTML = dates.map(d => `
+    <section class="date-group">
+      <h2>${esc(d)}</h2>
+      <div class="grid">
+        ${groups[d].map(f => `
+          <a class="card" href="${esc(f.path)}" ${(/\.(html?|png|jpe?g|gif|webp|svg|pdf|txt|md)$/i.test(f.name)) ? 'target="_blank"' : ''}>
+            <div class="icon" style="background:${colorOf(f.name)}">${iconOf(f.name)}</div>
+            <div style="min-width:0">
+              <div class="name">${esc(f.name)}</div>
+              ${f.note ? `<div class="note">${esc(f.note)}</div>` : ''}
+              <div class="tags">
+                <span class="tag type">${esc(extOf(f.name).toUpperCase() || 'FILE')}</span>
+                ${f.size ? `<span class="tag">${esc(f.size)}</span>` : ''}
+              </div>
+            </div>
+          </a>`).join('')}
+      </div>
+    </section>`).join('');
+}
+
+fetch('./files.json?ts=' + Date.now())
+  .then(r => r.json())
+  .then(d => {
+    DATA = d;
+    document.getElementById('updated').textContent =
+      d.updated ? d.updated.replace('T', ' ').slice(0, 16) : '未知';
+    render('');
+  })
+  .catch(() => {
+    document.getElementById('list').innerHTML =
+      '<div class="empty"><div class="big">⚠️</div>files.json 加载失败,请稍后刷新</div>';
+  });
+
+document.getElementById('search').addEventListener('input', e => render(e.target.value));
+</script>
+</body>
+</html>
