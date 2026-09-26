@@ -4,9 +4,7 @@
 
 ## 🌐 访问地址
 
-**https://<你的GitHub用户名>.github.io/lily-workspace/**
-
-(首次部署后由 AI 助手填入实际地址并更新此处)
+**https://lily553520.github.io/lily-workspace/**
 
 ## 📌 工作方式
 
