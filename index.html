@@ -3,197 +3,296 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>我的文件工作区</title>
-<style>
-  :root {
-    --bg: #f6f7f9;
-    --card: #ffffff;
-    --text: #1f2328;
-    --muted: #656d76;
-    --accent: #0969da;
-    --border: #d8dee4;
-    --radius: 12px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
-  header {
-    background: linear-gradient(135deg, #0d1117 0%, #1a2233 100%);
-    color: #fff;
-    padding: 40px 20px 32px;
-    text-align: center;
-  }
-  header h1 { font-size: 26px; font-weight: 700; letter-spacing: 1px; }
-  header p { margin-top: 8px; color: #8b949e; font-size: 14px; }
-  header .meta { margin-top: 12px; font-size: 13px; color: #58a6ff; }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 24px 16px 60px; }
-  .toolbar {
-    display: flex; gap: 10px; align-items: center;
-    margin-bottom: 20px; flex-wrap: wrap;
-  }
-  .toolbar input {
-    flex: 1; min-width: 220px;
-    padding: 10px 14px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 14px;
-    outline: none;
-    background: var(--card);
-  }
-  .toolbar input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(9,105,218,.15); }
-  .stats { font-size: 13px; color: var(--muted); white-space: nowrap; }
-  .date-group { margin-bottom: 28px; }
-  .date-group h2 {
-    font-size: 15px; color: var(--muted); font-weight: 600;
-    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
-  }
-  .date-group h2::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 14px;
-  }
-  a.card {
-    display: flex; gap: 12px; align-items: flex-start;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    text-decoration: none;
-    color: var(--text);
-    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-  }
-  a.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(31,35,40,.10);
-    border-color: var(--accent);
-  }
-  .icon {
-    width: 42px; height: 42px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 10px; font-size: 20px;
-    background: #eef4fc;
-  }
-  .card .name {
-    font-weight: 600; font-size: 14.5px;
-    word-break: break-all; line-height: 1.35;
-  }
-  .card .note {
-    margin-top: 4px; font-size: 13px; color: var(--muted);
-    word-break: break-all; line-height: 1.4;
-  }
-  .card .tags { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
-  .tag {
-    font-size: 11.5px; padding: 2px 8px; border-radius: 999px;
-    background: #f0f2f4; color: var(--muted);
-  }
-  .tag.type { background: #ddf4ff; color: #0550ae; font-weight: 600; }
-  .empty {
-    text-align: center; color: var(--muted); padding: 60px 0;
-  }
-  .empty .big { font-size: 44px; margin-bottom: 12px; }
-  footer {
-    text-align: center; color: var(--muted);
-    font-size: 12.5px; padding: 20px; border-top: 1px solid var(--border);
-  }
-  footer a { color: var(--accent); text-decoration: none; }
-</style>
+<title>考勤数据管理平台</title>
+<link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-<header>
-  <h1>📁 我的文件工作区</h1>
-  <p>AI 助手生成的文件集中管理 · 长期固定 · 持续更新</p>
-  <div class="meta">最后更新:<span id="updated">加载中…</span></div>
+
+<!-- ======= 顶部系统导航 ======= -->
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">📊</div>
+    <div class="brand-text">
+      <h1>考勤数据管理平台</h1>
+      <p>人力资源部 · 旷工数据看板</p>
+    </div>
+  </div>
+  <div class="userbox">
+    <div class="user-meta">
+      <span class="online-dot"></span><span class="online-text">在线</span>
+      <span class="divider"></span>
+      <span>数据更新:<b id="updTime">--</b></span>
+    </div>
+    <div class="avatar">L</div>
+    <span class="uname">lily.ngocly</span>
+  </div>
 </header>
 
-<div class="wrap">
-  <div class="toolbar">
-    <input type="search" id="search" placeholder="🔍 搜索文件名或备注…">
-    <span class="stats" id="stats"></span>
-  </div>
-  <div id="list"><div class="empty"><div class="big">⏳</div>正在加载文件列表…</div></div>
-</div>
+<!-- ======= Tab 导航 ======= -->
+<nav class="tabs" id="mainTabs">
+  <button class="tab active" data-view="attendance">日出勤表</button>
+  <button class="tab" data-view="window">旷窗口监控</button>
+  <button class="tab" data-view="attrition">流失率报表</button>
+  <button class="tab" data-view="memory">内存报表</button>
+</nav>
 
-<footer>
-  由 AI 助手自动维护 · 页面与文件托管于 GitHub Pages ·
-  <a href="https://github.com/" target="_blank" rel="noopener">前往 GitHub 编辑</a>
+<main class="main">
+
+  <!-- ======= 视图1:日出勤表(数据看板) ======= -->
+  <section class="view active" id="view-attendance">
+
+    <div class="toolbar">
+      <div class="tb-group">
+        <span class="tb-label">📅 日期</span>
+        <input type="date" id="attDate">
+        <button class="btn btn-outline" id="btnToday">今天</button>
+        <button class="btn btn-outline" id="btnRefresh">刷新</button>
+      </div>
+      <div class="tb-sep"></div>
+      <div class="tb-group">
+        <button class="btn btn-blue" data-modal="modal-rules">维护Group规则</button>
+        <button class="btn btn-blue" data-modal="modal-projmap">维护项目匹配关系表</button>
+        <button class="btn btn-green" id="btnImport">📥 导入Excel</button>
+        <button class="btn btn-green" id="btnExport">📤 导出明细</button>
+        <button class="btn btn-gray" id="btnLogs">操作日志</button>
+        <button class="btn btn-gray" id="btnFiles">源文件</button>
+      </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stat-cards" id="statCards"></div>
+
+    <!-- 双栏:明细 + 分布 -->
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>连续旷工人员明细</h3>
+          <span class="badge" id="attCount">0 人</span>
+        </div>
+        <div class="table-wrap">
+          <table id="attTable">
+            <thead>
+              <tr>
+                <th>员工编号</th><th>姓名</th><th>部门</th><th>Group</th>
+                <th>旷工项目</th><th>异常日期</th><th>连续天数</th><th>状态</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>各项目旷工分布</h3>
+          <span class="badge">按旷工天数</span>
+        </div>
+        <div class="table-wrap">
+          <table id="distTable">
+            <thead>
+              <tr>
+                <th>项目</th><th>旷1</th><th>旷2</th><th>旷3</th><th>旷4</th><th>旷5</th><th>旷6</th><th>合计</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= 视图2:旷窗口监控 ======= -->
+  <section class="view" id="view-window">
+    <div class="toolbar">
+      <div class="tb-group">
+        <span class="tb-label">筛选</span>
+        <select id="winDept"><option value="">全部部门</option></select>
+        <select id="winProj"><option value="">全部项目</option></select>
+        <select id="winStatus">
+          <option value="">全部状态</option>
+          <option value="进行中">进行中</option>
+          <option value="已结束">已结束</option>
+          <option value="未开始">未开始</option>
+        </select>
+        <input type="search" id="winSearch" placeholder="🔍 搜索编号/姓名">
+      </div>
+      <div class="tb-sep"></div>
+      <div class="tb-group">
+        <button class="btn btn-green" id="btnWinExport">📤 导出本表</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>旷工窗口监控(连续旷工区间)</h3>
+        <span class="badge" id="winCount">0 条</span>
+      </div>
+      <div class="table-wrap">
+        <table id="winTable">
+          <thead>
+            <tr>
+              <th>员工编号</th><th>姓名</th><th>部门</th><th>Group</th><th>项目</th>
+              <th>开始日期</th><th>结束日期</th><th>旷工天数</th><th>状态</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= 视图3:流失率报表 ======= -->
+  <section class="view" id="view-attrition">
+    <div class="toolbar">
+      <div class="tb-group">
+        <span class="tb-label">📉 按月统计</span>
+        <button class="btn btn-green" id="btnAttAdd">＋ 添加行</button>
+        <button class="btn btn-green" id="btnAttImport">📥 导入Excel</button>
+        <button class="btn btn-green" id="btnAttExport">📤 导出Excel</button>
+        <button class="btn btn-gray" id="btnAttLogs">操作日志</button>
+      </div>
+    </div>
+    <div class="stat-cards small" id="attCards"></div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>流失率月报(可直接编辑单元格)</h3>
+        <span class="badge">流失率 = 离职人数 ÷ 期初人数</span>
+      </div>
+      <div class="table-wrap">
+        <table id="attrTable">
+          <thead>
+            <tr><th style="width:110px">月份</th><th>部门</th><th style="width:110px">期初人数</th><th style="width:110px">离职人数</th><th style="width:100px">流失率</th><th>备注</th><th style="width:70px">操作</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= 视图4:内存报表 ======= -->
+  <section class="view" id="view-memory">
+    <div class="toolbar">
+      <div class="tb-group">
+        <span class="tb-label">💾 生产数据</span>
+        <button class="btn btn-green" id="btnMemAdd">＋ 添加行</button>
+        <button class="btn btn-green" id="btnMemImport">📥 导入Excel</button>
+        <button class="btn btn-green" id="btnMemExport">📤 导出Excel</button>
+        <button class="btn btn-gray" id="btnMemLogs">操作日志</button>
+      </div>
+    </div>
+    <div class="stat-cards small" id="memCards"></div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>内存生产明细(可直接编辑单元格)</h3>
+        <span class="badge">达成率 = 实际 ÷ 计划</span>
+      </div>
+      <div class="table-wrap">
+        <table id="memTable">
+          <thead>
+            <tr><th style="width:120px">日期</th><th>项目</th><th style="width:120px">计划数量</th><th style="width:120px">实际数量</th><th style="width:100px">达成率</th><th>备注</th><th style="width:70px">操作</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= 视图5:源文件(文件工作区) ======= -->
+  <section class="view" id="view-files">
+    <div class="toolbar">
+      <div class="tb-group">
+        <span class="tb-label">📁 AI 助手上传的源文件</span>
+      </div>
+      <div class="tb-sep"></div>
+      <div class="tb-group">
+        <button class="btn btn-outline" id="btnFilesBack">← 返回看板</button>
+        <button class="btn btn-outline" id="btnFilesRefresh">刷新列表</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>源文件列表</h3>
+        <span class="badge" id="fileCount">0 个</span>
+      </div>
+      <div class="files-grid" id="filesGrid">
+        <div class="empty-inline">加载中…</div>
+      </div>
+      <p class="files-hint">💡 需要上传文件时,直接对 AI 助手说「把 xx 文件放到工作区源文件里」即可,上传后刷新本页可见。</p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  考勤数据管理平台 · 数据保存在本机浏览器(localStorage) · 托管于 GitHub Pages · <span id="footDate"></span>
 </footer>
 
-<script>
-const ICONS = {
-  xlsx:'📊', xls:'📊', csv:'📊', doc:'📄', docx:'📄', txt:'📝', md:'📝',
-  pdf:'📕', ppt:'📽️', pptx:'📽️', html:'🌐', htm:'🌐',
-  png:'🖼️', jpg:'🖼️', jpeg:'🖼️', gif:'🖼️', webp:'🖼️', svg:'🖼️',
-  zip:'🗜️', rar:'🗜️', '7z':'🗜️', json:'🧩', js:'📜', py:'🐍',
-  mp3:'🎵', mp4:'🎬', mov:'🎬', wav:'🎵', default:'📎'
-};
-const COLORS = {
-  xlsx:'#d8f5d8', pdf:'#fde3e3', doc:'#e3edfd', docx:'#e3edfd',
-  ppt:'#fdf0e3', pptx:'#fdf0e3', html:'#efe3fd', png:'#e8f5f0',
-  jpg:'#e8f5f0', jpeg:'#e8f5f0', csv:'#fff3d6'
-};
-function extOf(name){ const m = name.toLowerCase().match(/\.([a-z0-9]+)$/); return m ? m[1] : ''; }
-function iconOf(name){ return ICONS[extOf(name)] || ICONS.default; }
-function colorOf(name){ return COLORS[extOf(name)] || '#eef4fc'; }
-function esc(s){ const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+<!-- ======= 弹窗:Group规则 ======= -->
+<div class="modal-mask" id="modal-rules">
+  <div class="modal">
+    <div class="modal-head"><h3>维护 Group 规则</h3><button class="modal-x" data-close>✕</button></div>
+    <p class="modal-tip">导入数据时,按「部门/项目包含关键字」自动归属 Group。修改即时生效。</p>
+    <div class="modal-table">
+      <table id="rulesTable">
+        <thead><tr><th style="width:38%">关键字(包含匹配)</th><th style="width:38%">归属 Group</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="modal-add">
+      <input id="ruleKey" placeholder="关键字,如:一部">
+      <input id="ruleVal" placeholder="Group,如:G1">
+      <button class="btn btn-blue" id="btnRuleAdd">＋ 添加规则</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close>关闭</button>
+    </div>
+  </div>
+</div>
 
-let DATA = { files: [] };
+<!-- ======= 弹窗:项目匹配关系 ======= -->
+<div class="modal-mask" id="modal-projmap">
+  <div class="modal">
+    <div class="modal-head"><h3>维护项目匹配关系表</h3><button class="modal-x" data-close>✕</button></div>
+    <p class="modal-tip">导入时自动把「项目别名/简称」映射为标准项目名,保证统计口径一致。</p>
+    <div class="modal-table">
+      <table id="projmapTable">
+        <thead><tr><th style="width:38%">项目别名(包含匹配)</th><th style="width:38%">标准项目名</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="modal-add">
+      <input id="mapAlias" placeholder="别名,如:A1">
+      <input id="mapStd" placeholder="标准名,如:A1线-P01客户">
+      <button class="btn btn-blue" id="btnMapAdd">＋ 添加映射</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close>关闭</button>
+    </div>
+  </div>
+</div>
 
-function render(q) {
-  q = (q || '').trim().toLowerCase();
-  const list = document.getElementById('list');
-  const files = DATA.files.filter(f =>
-    !q || f.name.toLowerCase().includes(q) || (f.note || '').toLowerCase().includes(q)
-  );
-  document.getElementById('stats').textContent =
-    `共 ${DATA.files.length} 个文件` + (q ? ` · 匹配 ${files.length} 个` : '');
+<!-- ======= 弹窗:操作日志 ======= -->
+<div class="modal-mask" id="modal-logs">
+  <div class="modal">
+    <div class="modal-head"><h3>操作日志</h3><button class="modal-x" data-close>✕</button></div>
+    <div class="log-list" id="logList"></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="btnClearAll">清空全部数据(含示例)</button>
+      <button class="btn btn-outline" data-close>关闭</button>
+    </div>
+  </div>
+</div>
 
-  if (!files.length) {
-    list.innerHTML = `<div class="empty"><div class="big">${q ? '🔍' : '📭'}</div>${
-      q ? '没有匹配的文件' : '工作区还是空的,让 AI 助手帮你导出第一个文件吧'}</div>`;
-    return;
-  }
-  const groups = {};
-  files.forEach(f => { (groups[f.date] = groups[f.date] || []).push(f); });
-  const dates = Object.keys(groups).sort().reverse();
-  list.innerHTML = dates.map(d => `
-    <section class="date-group">
-      <h2>${esc(d)}</h2>
-      <div class="grid">
-        ${groups[d].map(f => `
-          <a class="card" href="${esc(f.path)}" ${(/\.(html?|png|jpe?g|gif|webp|svg|pdf|txt|md)$/i.test(f.name)) ? 'target="_blank"' : ''}>
-            <div class="icon" style="background:${colorOf(f.name)}">${iconOf(f.name)}</div>
-            <div style="min-width:0">
-              <div class="name">${esc(f.name)}</div>
-              ${f.note ? `<div class="note">${esc(f.note)}</div>` : ''}
-              <div class="tags">
-                <span class="tag type">${esc(extOf(f.name).toUpperCase() || 'FILE')}</span>
-                ${f.size ? `<span class="tag">${esc(f.size)}</span>` : ''}
-              </div>
-            </div>
-          </a>`).join('')}
-      </div>
-    </section>`).join('');
-}
+<!-- ======= 弹窗:导入结果 ======= -->
+<div class="modal-mask" id="modal-import">
+  <div class="modal">
+    <div class="modal-head"><h3>导入结果</h3><button class="modal-x" data-close>✕</button></div>
+    <div id="importResult" class="import-result"></div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close>关闭</button></div>
+  </div>
+</div>
 
-fetch('./files.json?ts=' + Date.now())
-  .then(r => r.json())
-  .then(d => {
-    DATA = d;
-    document.getElementById('updated').textContent =
-      d.updated ? d.updated.replace('T', ' ').slice(0, 16) : '未知';
-    render('');
-  })
-  .catch(() => {
-    document.getElementById('list').innerHTML =
-      '<div class="empty"><div class="big">⚠️</div>files.json 加载失败,请稍后刷新</div>';
-  });
+<input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
 
-document.getElementById('search').addEventListener('input', e => render(e.target.value));
-</script>
+<script src="assets/xlsx.full.min.js"></script>
+<script src="assets/app.js"></script>
 </body>
 </html>
