@@ -3,26 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>6 nghỉ 1 — Tính công &amp; Xuất báo cáo</title>
+<title>6 nghỉ 1 &amp; Đầu việc — Bảng yêu cầu</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", sans-serif; background: #f0f4f8; color: #1e293b; min-height: 100vh; }
   .topbar { background: linear-gradient(90deg, #1e40af, #3b82f6); color: #fff; padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; }
-  .topbar h1 { font-size: 20px; }
+  .topbar h1 { font-size: 19px; }
   .topbar .sub { font-size: 12px; opacity: .85; }
   .topbar a.home { color: #fff; text-decoration: none; font-size: 13px; background: rgba(255,255,255,.15); padding: 6px 12px; border-radius: 8px; }
-  .wrap { max-width: 1080px; margin: 24px auto; padding: 0 16px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
-  .card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 1px 4px rgba(15,23,42,.08); }
+  .tabs2 { display: flex; gap: 8px; padding: 16px 28px 0; }
+  .tabs2 button { border: 0; background: #e2e8f0; color: #334155; font-size: 14px; font-weight: 600; padding: 10px 22px; border-radius: 10px 10px 0 0; cursor: pointer; }
+  .tabs2 button.active { background: #fff; color: #1d4ed8; box-shadow: 0 -2px 6px rgba(15,23,42,.06); }
+  .wrap { max-width: 1080px; margin: 0 auto 40px; padding: 18px 16px; }
+  .card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 1px 4px rgba(15,23,42,.08); margin-bottom: 18px; }
   .card h2 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
   .badge { font-size: 11px; background: #e0e7ff; color: #3730a3; border-radius: 99px; padding: 2px 10px; }
-  .drop { border: 2px dashed #93c5fd; border-radius: 12px; padding: 22px 16px; text-align: center; cursor: pointer; transition: .15s; background: #f8fafc; }
+  .drop { border: 2px dashed #93c5fd; border-radius: 12px; padding: 20px 16px; text-align: center; cursor: pointer; transition: .15s; background: #f8fafc; }
   .drop:hover, .drop.over { background: #eff6ff; border-color: #3b82f6; }
-  .drop .big { font-size: 30px; }
+  .drop .big { font-size: 26px; }
   .drop p { font-size: 13px; color: #475569; margin-top: 6px; }
-  .file-row { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-top: 10px; background: #f1f5f9; padding: 8px 10px; border-radius: 8px; }
+  .drop.mini { padding: 10px; }
+  .drop.mini .big { font-size: 18px; display: inline; }
+  .drop.mini p { margin-top: 2px; }
+  .file-row { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-top: 8px; background: #f1f5f9; padding: 7px 10px; border-radius: 8px; }
   .file-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-row .rm { border: 0; background: none; color: #b91c1c; cursor: pointer; font-size: 14px; }
   .btn { border: 0; border-radius: 8px; padding: 9px 16px; font-size: 13px; cursor: pointer; font-weight: 600; }
   .btn-blue { background: #2563eb; color: #fff; }
   .btn-blue:disabled { background: #94a3b8; cursor: not-allowed; }
@@ -32,83 +37,127 @@
   .btn-sm { padding: 5px 10px; font-size: 12px; }
   .status-line { margin-top: 10px; font-size: 13px; color: #2563eb; min-height: 18px; }
   ul.tasks { list-style: none; }
-  ul.tasks li { display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-  ul.tasks li .t-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  ul.tasks li .when { color: #94a3b8; font-size: 11px; white-space: nowrap; }
+  ul.tasks li.task { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  .t-head { display: flex; align-items: center; gap: 8px; }
+  .t-title { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .t-when { color: #94a3b8; font-size: 11px; white-space: nowrap; }
+  .t-note { color: #64748b; font-size: 12px; margin: 4px 0 0 34px; word-break: break-word; }
+  .t-files { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0 34px; }
+  .chip { font-size: 12px; background: #f1f5f9; border-radius: 7px; padding: 4px 9px; }
+  .chip a { color: #1d4ed8; text-decoration: none; word-break: break-all; }
+  .chip.out a { color: #16a34a; font-weight: 700; }
+  .t-actions { display: flex; gap: 6px; margin: 8px 0 0 34px; flex-wrap: wrap; }
   .pill { font-size: 11px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
   .pill.pending { background: #fef3c7; color: #92400e; }
   .pill.processing { background: #dbeafe; color: #1d4ed8; }
   .pill.done { background: #dcfce7; color: #166534; }
   a.dl { color: #16a34a; font-weight: 700; text-decoration: none; white-space: nowrap; }
   a.dl:hover { text-decoration: underline; }
-  .rules { font-size: 12.5px; color: #475569; line-height: 1.75; }
-  .rules b { color: #1e293b; }
-  .rules li { margin-left: 18px; }
   .empty { color: #94a3b8; font-size: 13px; padding: 14px 8px; text-align: center; }
   .footnote { margin-top: 20px; font-size: 12px; color: #94a3b8; text-align: center; }
   .howto { background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 14px 18px; font-size: 13px; color: #713f12; margin-bottom: 18px; line-height: 1.7; }
   .howto code { background: #fef3c7; padding: 1px 6px; border-radius: 5px; }
+  input.txt, textarea.txt { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 9px 12px; font-size: 13px; margin-top: 6px; font-family: inherit; }
+  label.lb { font-size: 12px; color: #475569; font-weight: 600; }
 </style>
 </head>
 <body>
 
 <header class="topbar">
   <div>
-    <h1>⏱️ 6 nghỉ 1 — Tính công &amp; Xuất báo cáo</h1>
-    <div class="sub">U01H · Giám sát "làm 6 ngày nghỉ 1 ngày" · upload → GoerMate xử lý → tải file kết quả</div>
+    <h1>⏱️ 6 nghỉ 1 &amp; 📌 Đầu việc — Bảng yêu cầu</h1>
+    <div class="sub">Upload → GoerMate xử lý → tải kết quả · thêm/sửa/xóa yêu cầu thoải mái</div>
   </div>
   <a class="home" href="index.html">← Về trang chính</a>
 </header>
 
+<div class="tabs2">
+  <button id="tab6n1" class="active">⏱️ 6 nghỉ 1</button>
+  <button id="tabOther">📌 Đầu việc khác</button>
+</div>
+
 <div class="wrap">
-  <div class="howto">
-    <b>Cách dùng:</b> ① Bấm khung bên phải để chọn <b>file dữ liệu</b> (file 2 cần tính) — có thể chọn thêm <b>file mẫu</b> (file 1 hướng dẫn, nếu có thay đổi).
-    ② Bấm <code>Gửi yêu cầu</code>. ③ Nhắn cho GoerMate: <code>xử lý 6 nghỉ 1</code>. ④ Khi trạng thái chuyển <b>done</b>, bấm <b>Tải kết quả</b> ở khung bên trái.
-  </div>
 
-  <div class="grid">
-    <!-- Kết quả -->
-    <div class="card">
-      <h2>📥 Kết quả &amp; hàng chờ <span class="badge" id="cnt">0</span></h2>
-      <ul class="tasks" id="taskList"></ul>
-      <div class="empty" id="emptyMsg" style="display:none">Chưa có yêu cầu nào. Upload file để bắt đầu.</div>
-      <div style="margin-top:12px; text-align:right;">
-        <button class="btn btn-gray btn-sm" id="btnReload">🔄 Làm mới</button>
+  <!-- ===== TAB 6 NGHI 1 ===== -->
+  <div id="pane6n1">
+    <div class="howto">
+      <b>Cách dùng:</b> ① Chọn <b>file dữ liệu</b> (file 2), cần thêm file mẫu/file khác thì bấm <code>+ Thêm file</code>.
+      ② Bấm <code>+ Gửi yêu cầu</code>. ③ Nhắn GoerMate: <code>xử lý 6 nghỉ 1</code>. ④ Trạng thái <b>done</b> → bấm tải kết quả.
+      Sửa tiêu đề/ghi chú bằng <code>✏️ Sửa</code>, thêm file sau bằng <code>➕ File</code> trên từng yêu cầu.
+    </div>
+
+    <div class="grid2" style="display:grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+      <div class="card">
+        <h2>📥 Yêu cầu &amp; kết quả <span class="badge" id="cnt6">0</span></h2>
+        <ul class="tasks" id="list6"></ul>
+        <div class="empty" id="empty6" style="display:none">Chưa có yêu cầu nào.</div>
+        <div style="margin-top:12px; text-align:right;">
+          <button class="btn btn-gray btn-sm" id="btnReload6">🔄 Làm mới</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📤 Tạo yêu cầu 6 nghỉ 1</h2>
+        <div class="drop" id="dropZone">
+          <div class="big">📊</div>
+          <p><b>Bấm để chọn file dữ liệu</b> (file 2 — bắt buộc)<br>.xls / .xlsx</p>
+        </div>
+        <div id="fileList6"></div>
+        <button class="btn btn-gray btn-sm" id="btnAddFileForm" style="margin-top:10px;">➕ Thêm file (mẫu / mục tiêu / khác)</button>
+        <div style="margin-top:12px;">
+          <label class="lb">Ghi chú cho AI (tùy chọn)</label>
+          <textarea class="txt" id="note6" rows="2" placeholder="VD: tính kỳ 10/2026, file mẫu đính kèm…"></textarea>
+        </div>
+        <div style="margin-top:12px; display:flex; gap:10px;">
+          <button class="btn btn-blue" id="btnSubmit6" disabled>➕ Gửi yêu cầu</button>
+          <button class="btn btn-gray" id="btnReset6">Xóa chọn</button>
+        </div>
+        <div class="status-line" id="status6"></div>
       </div>
     </div>
 
-    <!-- Upload -->
-    <div class="card">
-      <h2>📤 Tạo yêu cầu mới</h2>
-      <div class="drop" id="dropData">
-        <div class="big">📊</div>
-        <p><b>Bấm để chọn file dữ liệu</b> (file 2 — bắt buộc)<br>.xls / .xlsx — dữ liệu chấm công gốc có Sheet2</p>
+    <div class="card" style="margin-top:18px;">
+      <h2>📋 Công thức "6 nghỉ 1" (đang áp dụng)</h2>
+      <div class="rules" style="font-size:12.5px; color:#475569; line-height:1.75;">
+        <ol style="margin-left:18px;">
+          <li><b>Theo tháng của file:</b> gửi tháng nào tính tháng đó, <b>từ ngày 1 đến hết tháng</b>. Dữ liệu đến ngày nào tính đến đó (tải giữa tháng thì ngày sau = 0 là bình thường) — <b>không cắt, không zero hóa</b>. Đây là bản <i>dự tính trước</i>; có file full tháng thì gửi lại tính full.</li>
+          <li><b>Lọc bỏ:</b> ① có <b>离职日期</b> · ② <b>入职日期</b> &gt; mùng 1 <b>của tháng đang tính</b> · ③ <b>总计 = 0</b> · ④ <b>帮工</b> có tên.</li>
+          <li><b>OT chủ nhật:</b> tên ở cột OT ngày nào → <b>工时 ngày đó về 0</b>.</li>
+          <li><b>Pivot</b>: Count of 工号 — 业务单位 × 天数区间 + bảng tỉ lệ %.</li>
+          <li><b>达成/不达成:</b> đối chiếu <b>file mục tiêu hàng tháng</b> (không dùng mốc % cố định).</li>
+        </ol>
       </div>
-      <div id="dataInfo" style="display:none" class="file-row">📄 <span class="name"></span></div>
-      <div class="drop" id="dropMau" style="margin-top:12px;">
-        <div class="big" style="font-size:22px;">🧩</div>
-        <p><b>File mẫu / hướng dẫn</b> (file 1 — tùy chọn)<br>Chọn nếu tháng này mẫu có thay đổi</p>
-      </div>
-      <div id="mauInfo" style="display:none" class="file-row">🧩 <span class="name"></span></div>
-      <div style="margin-top:14px; display:flex; gap:10px;">
-        <button class="btn btn-blue" id="btnSubmit" disabled>Gửi yêu cầu cho AI</button>
-        <button class="btn btn-gray" id="btnReset">Xóa chọn</button>
-      </div>
-      <div class="status-line" id="status"></div>
     </div>
   </div>
 
-  <div class="card" style="margin-top:18px;">
-    <h2>📋 Công thức tính "6 nghỉ 1" (đang áp dụng)</h2>
-    <div class="rules">
-      <ol>
-        <li><b>Theo tháng của file:</b> gửi tháng nào tính tháng đó, <b>từ ngày 1 đến hết tháng</b>. Dữ liệu đến ngày nào tính đến ngày đó — nếu tải giữa tháng (VD hôm nay 15/10, file chỉ có giờ đến 15/10, 16–31/10 = 0) thì cứ tính theo dữ liệu hiện tại, <b>không cắt, không zero hóa gì thêm</b>. Đây là bản <i>dự tính trước</i>; khi có file full tháng thì gửi lại để tính full.</li>
-        <li><b>Lọc bỏ (xóa row):</b> ① có <b>离职日期</b> (trống thì giữ) · ② <b>入职日期</b> &gt; mùng 1 <b>của tháng đang tính</b> (tính tháng 10/2026 → vào sau 1/10/2026 thì xóa; vào đúng mùng 1 hoặc trước đó → giữ) · ③ <b>总计 = 0</b> · ④ <b>帮工</b> có tên (trống giữ lại).</li>
-        <li><b>OT chủ nhật:</b> ai có tên ở cột OT ngày nào (VD 10.4 OT) → <b>工时 ngày đó về 0</b>.</li>
-        <li><b>连续出勤最大天数</b> = MAX(FREQUENCY(...)) — số ngày đi làm liên tục nhiều nhất; <b>天数区间</b>: ≤6 / 6&lt;wk≤12 / 12&lt;wk&lt;21 / ≥21.</li>
-        <li><b>Pivot</b>: Count of 工号 — hàng: 业务单位, cột: 天数区间 + bảng tỉ lệ % (số người ≤6 / tổng).</li>
-        <li><b>达成 / 不达成:</b> đối chiếu theo <b>file mục tiêu (chỉ tiêu) hàng tháng</b> — không dùng mốc % cố định.</li>
-      </ol>
+  <!-- ===== TAB DAU VIEC KHAC ===== -->
+  <div id="paneOther" style="display:none;">
+    <div class="grid2" style="display:grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+      <div class="card">
+        <h2>📌 Đầu việc khác <span class="badge" id="cntO">0</span></h2>
+        <ul class="tasks" id="listO"></ul>
+        <div class="empty" id="emptyO" style="display:none">Chưa có đầu việc nào.</div>
+        <div style="margin-top:12px; text-align:right;">
+          <button class="btn btn-gray btn-sm" id="btnReloadO">🔄 Làm mới</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>➕ Thêm đầu việc khác</h2>
+        <label class="lb">Tiêu đề *</label>
+        <input class="txt" id="titleO" placeholder="VD: Tổng hợp báo cáo tuần…">
+        <label class="lb" style="display:block; margin-top:10px;">Ghi chú / yêu cầu cho AI</label>
+        <textarea class="txt" id="noteO" rows="3" placeholder="Mô tả rõ việc cần làm…"></textarea>
+        <label class="lb" style="display:block; margin-top:10px;">File đính kèm (tùy chọn)</label>
+        <div class="drop mini" id="dropO">
+          <span class="big">📎</span> <span style="font-size:13px;">Bấm để chọn file</span>
+        </div>
+        <div id="fileListO"></div>
+        <div style="margin-top:12px;">
+          <button class="btn btn-green" id="btnSubmitO">➕ Thêm đầu việc</button>
+        </div>
+        <div class="status-line" id="statusO"></div>
+      </div>
     </div>
   </div>
 
@@ -121,118 +170,247 @@
 <script src="assets/supabase.js"></script>
 <script>
 "use strict";
-const SECTION_NAME = "6 nghỉ 1";
-let sectionId = null;
-let dataFile = null, mauFile = null;
+const SEC_6N1 = "6 nghỉ 1";
+const SEC_OTHER = "Công việc khác";
+let sec6 = null, secO = null;
+let files6 = [];   // {file} cho form 6nghi1
+let filesO = [];   // {file} cho form khác
 
 function fmtSize(b) { return b > 1048576 ? (b/1048576).toFixed(1) + " MB" : Math.round(b/1024) + " KB"; }
 function esc(s) { return (s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function fmtDate(s) { try { return new Date(s).toLocaleString("vi-VN", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }); } catch(e) { return s; } }
+function baseName(p) { return (p||"").split("/").pop(); }
 
-async function ensureSection() {
-  const rows = await SB.select("board_sections", "name=eq." + encodeURIComponent(SECTION_NAME));
-  if (rows && rows.length > 0) { sectionId = rows[0].id; return; }
-  const ins = await SB.insert("board_sections", [{ name: SECTION_NAME, order_idx: 99 }]);
-  sectionId = ins[0].id;
+/* note format: phan ghi chu + cac dong "fileN: <path>" */
+function splitNote(note) {
+  const lines = (note || "").split("\n");
+  const text = [], files = [];
+  lines.forEach(l => {
+    const m = l.match(/^file\d+: (.+)$/);
+    if (m) files.push(m[1]); else text.push(l);
+  });
+  return { text: text.join("\n").trim(), files };
+}
+function buildNote(text, files) {
+  let n = (text || "").trim();
+  files.forEach((p, i) => { n += (n ? "\n" : "") + "file" + (i + 2) + ": " + p; });
+  return n;
 }
 
-async function loadTasks() {
-  const list = $("#taskList");
-  list.innerHTML = '<li class="empty">Đang tải…</li>';
-  const tasks = await SB.select("board_tasks", "section_id=eq." + sectionId + "&order=created_at.desc");
-  $("#cnt").textContent = tasks.length;
-  $("#emptyMsg").style.display = tasks.length ? "none" : "block";
-  list.innerHTML = tasks.map(t => {
-    let right = "";
-    if (t.status === "done" && t.output_file) {
-      right = `<a class="dl" href="${esc(SB.filePublicUrl(t.output_file))}" download>⬇ Tải kết quả</a>`;
-    } else if (t.status === "done") {
-      right = '<span class="pill done">done</span>';
-    } else {
-      right = `<span class="pill ${esc(t.status)}">${t.status === "pending" ? "chờ AI xử lý" : esc(t.status)}</span>`;
-    }
-    return `<li>
+async function ensureSections() {
+  const rows = await SB.select("board_sections", "order=order_idx.asc");
+  const find = (n) => (rows || []).find(r => r.name === n);
+  let s6 = find(SEC_6N1);
+  if (!s6) s6 = (await SB.insert("board_sections", [{ name: SEC_6N1, order_idx: 98 }]))[0];
+  let sO = find(SEC_OTHER);
+  if (!sO) sO = (await SB.insert("board_sections", [{ name: SEC_OTHER, order_idx: 99 }]))[0];
+  sec6 = s6.id; secO = sO.id;
+}
+
+function taskCard(t, extraFiles) {
+  const done = t.status === "done" && t.output_file;
+  let chips = "";
+  if (t.input_file) chips += `<span class="chip">📄 <a href="${esc(SB.filePublicUrl(t.input_file))}" target="_blank">${esc(baseName(t.input_file))}</a></span>`;
+  extraFiles.forEach(p => { chips += `<span class="chip">📎 <a href="${esc(SB.filePublicUrl(p))}" target="_blank">${esc(baseName(p))}</a></span>`; });
+  if (done) chips += `<span class="chip out">📥 <a href="${esc(SB.filePublicUrl(t.output_file))}" download>Tải kết quả: ${esc(baseName(t.output_file))}</a></span>`;
+  return `<li class="task" data-id="${t.id}">
+    <div class="t-head">
       <span class="pill ${esc(t.status)}">${t.status === "pending" ? "⏳ chờ" : t.status === "processing" ? "⚙️ đang xử lý" : "✅ done"}</span>
       <span class="t-title" title="${esc(t.title)}">${esc(t.title)}</span>
-      <span class="when">${fmtDate(t.created_at)}</span>
-      ${right}
-      <button class="btn btn-red btn-sm" data-del="${t.id}" data-f="${esc(t.input_file || "")}" title="Xóa yêu cầu">🗑</button>
-    </li>`;
-  }).join("");
-  list.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", async () => {
-    if (!confirm("Xóa yêu cầu này?")) return;
-    const id = b.dataset.del, f = b.dataset.f;
+      <span class="t-when">${fmtDate(t.created_at)}</span>
+    </div>
+    ${extraFiles.length || t.input_file || done ? `<div class="t-files">${chips}</div>` : ""}
+    ${t.note ? `<div class="t-note">${esc(t.note)}</div>` : ""}
+    <div class="t-actions">
+      <button class="btn btn-gray btn-sm" data-edit="${t.id}">✏️ Sửa</button>
+      <button class="btn btn-gray btn-sm" data-addfile="${t.id}" data-sec="${t.section_id}">➕ File</button>
+      <button class="btn btn-red btn-sm" data-del="${t.id}">🗑 Xóa</button>
+    </div>
+  </li>`;
+}
+
+function bindTaskActions(listEl, isOther) {
+  listEl.querySelectorAll("[data-edit]").forEach(b => b.addEventListener("click", async () => {
+    const id = b.dataset.edit;
+    const t = (isOther ? tasksO : tasks6).find(x => x.id === id);
+    const nt = prompt("Sửa tiêu đề:", t.title);
+    if (nt === null) return;
+    const nn = prompt("Sửa ghi chú:", splitNote(t.note).text);
+    if (nn === null) return;
+    const keep = splitNote(t.note).files;
+    await SB.update("board_tasks", id, { title: nt.trim() || t.title, note: buildNote(nn, keep) });
+    isOther ? loadOther() : load6();
+  }));
+  listEl.querySelectorAll("[data-addfile]").forEach(b => b.addEventListener("click", () => {
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.style.display = "none";
+    inp.addEventListener("change", async () => {
+      const f = inp.files[0];
+      if (!f) return;
+      b.disabled = true;
+      try {
+        const d = new Date();
+        const stamp = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+        const p = "input/" + (b.dataset.sec === sec6 ? "6nghi1" : "khac") + "/" + stamp + "-" + Date.now() + "-" + f.name;
+        await SB.uploadFile(p, f);
+        const t = (isOther ? tasksO : tasks6).find(x => x.id === b.dataset.addfile);
+        const sn = splitNote(t.note);
+        sn.files.push(p);
+        await SB.update("board_tasks", t.id, { note: buildNote(sn.text, sn.files) });
+        isOther ? loadOther() : load6();
+      } catch (e) { alert("Upload lỗi: " + e.message); b.disabled = false; }
+    });
+    inp.click();
+  }));
+  listEl.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", async () => {
+    const id = b.dataset.del;
+    if (!confirm("Xóa đầu việc này?")) return;
     b.disabled = true;
     try {
-      if (f) { try { await SB.removeFile(f); } catch (e) {} }
+      const all = tasks6.concat(tasksO);
+      const t = all.find(x => x.id === id);
+      const paths = [t.input_file].concat(splitNote(t.note).files).filter(Boolean);
+      for (const p of paths) { try { await SB.removeFile(p); } catch (e) {} }
       await SB.remove("board_tasks", id);
-      await loadTasks();
+      isOther ? loadOther() : load6();
     } catch (e) { alert("Xóa lỗi: " + e.message); b.disabled = false; }
   }));
 }
 
-function bindDrop(dropId, infoId, setter) {
-  const drop = $(dropId), info = $(infoId);
+let tasks6 = [], tasksO = [];
+async function load6() {
+  const list = $("#list6");
+  list.innerHTML = '<li class="empty">Đang tải…</li>';
+  tasks6 = await SB.select("board_tasks", "section_id=eq." + sec6 + "&order=created_at.desc");
+  $("#cnt6").textContent = tasks6.length;
+  $("#empty6").style.display = tasks6.length ? "none" : "block";
+  list.innerHTML = tasks6.map(t => taskCard(t, splitNote(t.note).files)).join("");
+  bindTaskActions(list, false);
+}
+async function loadOther() {
+  const list = $("#listO");
+  list.innerHTML = '<li class="empty">Đang tải…</li>';
+  tasksO = await SB.select("board_tasks", "section_id=eq." + secO + "&order=created_at.desc");
+  $("#cntO").textContent = tasksO.length;
+  $("#emptyO").style.display = tasksO.length ? "none" : "block";
+  list.innerHTML = tasksO.map(t => taskCard(t, splitNote(t.note).files)).join("");
+  bindTaskActions(list, true);
+}
+
+/* ---- form 6 nghi 1 ---- */
+function renderFiles6() {
+  const box = $("#fileList6");
+  box.innerHTML = files6.map((f, i) => `<div class="file-row">${i === 0 ? "📊" : "📎"} <span class="name">${esc(f.name)} (${fmtSize(f.size)})</span><button class="rm" data-i="${i}">✕</button></div>`).join("");
+  box.querySelectorAll(".rm").forEach(b => b.addEventListener("click", () => { files6.splice(+b.dataset.i, 1); renderFiles6(); check6(); }));
+  check6();
+}
+function check6() { $("#btnSubmit6").disabled = files6.length === 0; }
+function bindDropZone(dropId, cb) {
+  const drop = $(dropId);
   const inp = document.createElement("input");
-  inp.type = "file"; inp.accept = ".xls,.xlsx"; inp.style.display = "none";
+  inp.type = "file"; inp.accept = ".xls,.xlsx,.csv"; inp.style.display = "none"; inp.multiple = true;
   drop.appendChild(inp);
-  const pick = (f) => { if (!f) return; setter(f); info.style.display = "flex"; info.querySelector(".name").textContent = f.name + " (" + fmtSize(f.size) + ")"; check(); };
   drop.addEventListener("click", () => inp.click());
-  inp.addEventListener("change", () => pick(inp.files[0]));
+  inp.addEventListener("change", () => { Array.from(inp.files).forEach(cb); inp.value = ""; });
   drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
   drop.addEventListener("dragleave", () => drop.classList.remove("over"));
-  drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); pick(e.dataTransfer.files[0]); });
+  drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); Array.from(e.dataTransfer.files).forEach(cb); });
 }
-function check() { $("#btnSubmit").disabled = !dataFile; }
 
-async function upload() {
-  const st = $("#status");
-  $("#btnSubmit").disabled = true;
+async function submit6() {
+  const st = $("#status6");
+  $("#btnSubmit6").disabled = true;
   try {
-    st.textContent = "⏳ Đang upload file dữ liệu…";
     const d = new Date();
     const stamp = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
-    const inPath = "input/6nghi1/" + stamp + "-" + Date.now() + "-" + dataFile.name;
-    await SB.uploadFile(inPath, dataFile);
-    let mauPath = "";
-    if (mauFile) {
-      st.textContent = "⏳ Đang upload file mẫu…";
-      mauPath = "input/6nghi1/mau-" + stamp + "-" + Date.now() + "-" + mauFile.name;
-      await SB.uploadFile(mauPath, mauFile);
+    const paths = [];
+    for (let i = 0; i < files6.length; i++) {
+      st.textContent = "⏳ Đang upload file " + (i + 1) + "/" + files6.length + "…";
+      const p = "input/6nghi1/" + stamp + "-" + Date.now() + "-" + i + "-" + files6[i].name;
+      await SB.uploadFile(p, files6[i]);
+      paths.push(p);
     }
     st.textContent = "⏳ Đang tạo yêu cầu…";
-    const monthGuess = (dataFile.name.match(/(20\d{2})[-._]?(0[1-9]|1[0-2])/) || [])[0] || stamp;
+    const monthGuess = (files6[0].name.match(/(20\d{2})[-._]?(0[1-9]|1[0-2])/) || [])[0] || stamp;
     await SB.insert("board_tasks", [{
-      section_id: sectionId,
-      title: "6 nghỉ 1 — " + monthGuess + " — " + dataFile.name,
+      section_id: sec6,
+      title: "6 nghỉ 1 — " + monthGuess + " — " + files6[0].name,
       status: "pending",
-      note: "Tính 6 nghỉ 1 theo công thức chuẩn" + (mauPath ? " (file mẫu: " + mauPath + ")" : ""),
-      input_file: inPath,
+      note: buildNote($("#note6").value.trim() || "Tính 6 nghỉ 1 theo công thức chuẩn", paths.slice(1)),
+      input_file: paths[0],
       output_file: null
     }]);
     st.textContent = "✅ Đã gửi! Nhắn GoerMate: «xử lý 6 nghỉ 1»";
-    dataFile = null; mauFile = null;
-    $("#dataInfo").style.display = "none"; $("#mauInfo").style.display = "none";
-    await loadTasks();
-  } catch (e) {
-    st.textContent = "❌ Lỗi: " + e.message;
-  }
-  $("#btnSubmit").disabled = !dataFile;
+    files6 = []; renderFiles6(); $("#note6").value = "";
+    await load6();
+  } catch (e) { st.textContent = "❌ Lỗi: " + e.message; }
+  check6();
+}
+
+/* ---- form dau viec khac ---- */
+function renderFilesO() {
+  const box = $("#fileListO");
+  box.innerHTML = filesO.map((f, i) => `<div class="file-row">📎 <span class="name">${esc(f.name)} (${fmtSize(f.size)})</span><button class="rm" data-i="${i}">✕</button></div>`).join("");
+  box.querySelectorAll(".rm").forEach(b => b.addEventListener("click", () => { filesO.splice(+b.dataset.i, 1); renderFilesO(); }));
+}
+async function submitO() {
+  const st = $("#statusO");
+  const title = $("#titleO").value.trim();
+  if (!title) { st.textContent = "❌ Cần nhập tiêu đề"; return; }
+  $("#btnSubmitO").disabled = true;
+  try {
+    const d = new Date();
+    const stamp = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    const paths = [];
+    for (let i = 0; i < filesO.length; i++) {
+      st.textContent = "⏳ Đang upload file " + (i + 1) + "/" + filesO.length + "…";
+      const p = "input/khac/" + stamp + "-" + Date.now() + "-" + i + "-" + filesO[i].name;
+      await SB.uploadFile(p, filesO[i]);
+      paths.push(p);
+    }
+    await SB.insert("board_tasks", [{
+      section_id: secO,
+      title: title,
+      status: "pending",
+      note: buildNote($("#noteO").value.trim(), paths.slice(1)),
+      input_file: paths[0] || null,
+      output_file: null
+    }]);
+    st.textContent = "✅ Đã thêm đầu việc! Nhắn GoerMate để được xử lý.";
+    filesO = []; renderFilesO(); $("#titleO").value = ""; $("#noteO").value = "";
+    await loadOther();
+  } catch (e) { st.textContent = "❌ Lỗi: " + e.message; }
+  $("#btnSubmitO").disabled = false;
+}
+
+/* ---- tabs ---- */
+function showTab(which) {
+  const a = which === "6";
+  $("#tab6n1").classList.toggle("active", a);
+  $("#tabOther").classList.toggle("active", !a);
+  $("#pane6n1").style.display = a ? "block" : "none";
+  $("#paneOther").style.display = a ? "none" : "block";
 }
 
 (async function init() {
   if (!SB.ready()) { showSetup(); return; }
   try {
-    await ensureSection();
-    await loadTasks();
-    bindDrop("#dropData", "#dataInfo", f => dataFile = f);
-    bindDrop("#dropMau", "#mauInfo", f => mauFile = f);
-    $("#btnSubmit").addEventListener("click", upload);
-    $("#btnReset").addEventListener("click", () => { dataFile = null; mauFile = null; $("#dataInfo").style.display = "none"; $("#mauInfo").style.display = "none"; check(); $("#status").textContent = ""; });
-    $("#btnReload").addEventListener("click", loadTasks);
-    setInterval(loadTasks, 30000);
+    await ensureSections();
+    await load6();
+    await loadOther();
+    bindDropZone("#dropZone", f => { if (f) { files6.push(f); renderFiles6(); } });
+    bindDropZone("#dropO", f => { if (f) { filesO.push(f); renderFilesO(); } });
+    $("#btnAddFileForm").addEventListener("click", () => $("#dropZone").click());
+    $("#btnSubmit6").addEventListener("click", submit6);
+    $("#btnReset6").addEventListener("click", () => { files6 = []; renderFiles6(); $("#note6").value = ""; $("#status6").textContent = ""; });
+    $("#btnSubmitO").addEventListener("click", submitO);
+    $("#btnReload6").addEventListener("click", load6);
+    $("#btnReloadO").addEventListener("click", loadOther);
+    $("#tab6n1").addEventListener("click", () => showTab("6"));
+    $("#tabOther").addEventListener("click", () => showTab("O"));
+    setInterval(() => { load6(); loadOther(); }, 30000);
   } catch (e) {
-    $("#status").textContent = "❌ " + e.message;
+    $("#status6").textContent = "❌ " + e.message;
   }
 })();
 </script>
