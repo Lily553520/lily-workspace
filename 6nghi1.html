@@ -102,11 +102,12 @@
     <h2>📋 Công thức tính "6 nghỉ 1" (đang áp dụng)</h2>
     <div class="rules">
       <ol>
-        <li><b>Cắt thời gian:</b> chỉ tính từ ngày 1 đến Chủ nhật cuối cùng của tháng (VD tháng 9/2026: 9.1–9.27, ngày 28–31 về 0). Tổng計 = SUM(G:AK).</li>
-        <li><b>Lọc bỏ (xóa row):</b> ① có <b>离职日期</b> (N/A thì giữ) · ② <b>入职日期</b> &gt; mùng 1 tháng 10/2026 (ngày mùng 1 giữ lại) · ③ <b>总计 = 0</b> · ④ <b>帮工</b> có tên (N/A giữ lại).</li>
-        <li><b>OT chủ nhật:</b> ai có tên ở cột OT ngày nào (VD 9.6 OT) → <b>工时 ngày đó về 0</b>.</li>
+        <li><b>Theo tháng của file:</b> gửi tháng nào tính tháng đó, <b>từ ngày 1 đến hết tháng</b>. Dữ liệu đến ngày nào tính đến ngày đó — nếu tải giữa tháng (VD hôm nay 15/10, file chỉ có giờ đến 15/10, 16–31/10 = 0) thì cứ tính theo dữ liệu hiện tại, <b>không cắt, không zero hóa gì thêm</b>. Đây là bản <i>dự tính trước</i>; khi có file full tháng thì gửi lại để tính full.</li>
+        <li><b>Lọc bỏ (xóa row):</b> ① có <b>离职日期</b> (trống thì giữ) · ② <b>入职日期</b> &gt; mùng 1 <b>của tháng đang tính</b> (tính tháng 10/2026 → vào sau 1/10/2026 thì xóa; vào đúng mùng 1 hoặc trước đó → giữ) · ③ <b>总计 = 0</b> · ④ <b>帮工</b> có tên (trống giữ lại).</li>
+        <li><b>OT chủ nhật:</b> ai có tên ở cột OT ngày nào (VD 10.4 OT) → <b>工时 ngày đó về 0</b>.</li>
         <li><b>连续出勤最大天数</b> = MAX(FREQUENCY(...)) — số ngày đi làm liên tục nhiều nhất; <b>天数区间</b>: ≤6 / 6&lt;wk≤12 / 12&lt;wk&lt;21 / ≥21.</li>
-        <li><b>Pivot</b>: Count of 工号 — hàng: 业务单位, cột: 天数区间 + bảng tỉ lệ % (≤6/total) → ≥90% = <b>达成</b>, &lt;90% = 不达成, tổng số ≤ 5 người = "/", tổng cả BG = "BG 达成/不达成".</li>
+        <li><b>Pivot</b>: Count of 工号 — hàng: 业务单位, cột: 天数区间 + bảng tỉ lệ % (số người ≤6 / tổng).</li>
+        <li><b>达成 / 不达成:</b> đối chiếu theo <b>file mục tiêu (chỉ tiêu) hàng tháng</b> — không dùng mốc % cố định.</li>
       </ol>
     </div>
   </div>
