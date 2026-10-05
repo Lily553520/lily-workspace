@@ -34,6 +34,7 @@
   .btn-green { background: #16a34a; color: #fff; }
   .btn-gray { background: #e2e8f0; color: #334155; }
   .btn-red { background: #fee2e2; color: #b91c1c; }
+  .btn-yellow { background: #fef3c7; color: #92400e; }
   .btn-sm { padding: 5px 10px; font-size: 12px; }
   .status-line { margin-top: 10px; font-size: 13px; color: #2563eb; min-height: 18px; }
   ul.tasks { list-style: none; }
@@ -57,6 +58,13 @@
   .footnote { margin-top: 20px; font-size: 12px; color: #94a3b8; text-align: center; }
   .howto { background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 14px 18px; font-size: 13px; color: #713f12; margin-bottom: 18px; line-height: 1.7; }
   .howto code { background: #fef3c7; padding: 1px 6px; border-radius: 5px; }
+  .howto summary { cursor: pointer; font-weight: 700; font-size: 14px; user-select: none; }
+  .howto.collapsed .howto-body { display: none; }
+  .quick-dl { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .quick-dl a { font-size: 12px; background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 7px; text-decoration: none; font-weight: 600; }
+  .quick-dl a:hover { background: #bbf7d0; }
+  .t-when { color: #94a3b8; font-size: 11px; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+  .t-when .rel { color: #64748b; font-style: italic; }
   input.txt, textarea.txt { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 9px 12px; font-size: 13px; margin-top: 6px; font-family: inherit; }
   label.lb { font-size: 12px; color: #475569; font-weight: 600; }
 </style>
@@ -81,9 +89,16 @@
   <!-- ===== TAB 6 NGHI 1 ===== -->
   <div id="pane6n1">
     <div class="howto">
+      <details open><summary>📖 Hướng dẫn sử dụng</summary>
+      <div class="howto-body" style="margin-top:8px;">
       <b>Cách dùng:</b> ① Chọn <b>file dữ liệu</b> (file 2), cần thêm file mẫu/file khác thì bấm <code>+ Thêm file</code>.
       ② Bấm <code>+ Gửi yêu cầu</code>. ③ Nhắn GoerMate: <code>xử lý 6 nghỉ 1</code>. ④ Trạng thái <b>done</b> → bấm tải kết quả.
-      Sửa tiêu đề/ghi chú bằng <code>✏️ Sửa</code>, thêm file sau bằng <code>➕ File</code> trên từng yêu cầu.
+      Sửa tiêu đề/ghi chú bằng <code>✏️ Sửa</code>, thêm file sau bằng <code>➕ File</code>, chuyển tab bằng <code>📤 Chuyển tab</code> trên từng yêu cầu.
+      </div></details>
+    </div>
+    <div class="card" id="quickDlCard" style="display:none;">
+      <h2>📥 Tải nhanh kết quả mới nhất</h2>
+      <div class="quick-dl" id="quickDl"></div>
     </div>
 
     <div class="grid2" style="display:grid; grid-template-columns: 1fr 1fr; gap: 18px;">
@@ -179,6 +194,7 @@ let filesO = [];   // {file} cho form khác
 function fmtSize(b) { return b > 1048576 ? (b/1048576).toFixed(1) + " MB" : Math.round(b/1024) + " KB"; }
 function esc(s) { return (s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function fmtDate(s) { try { return new Date(s).toLocaleString("vi-VN", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }); } catch(e) { return s; } }
+function fmtRel(s) { try { const ms = Date.now() - new Date(s).getTime(); const m = Math.floor(ms / 60000); if (m < 1) return "vừa xong"; if (m < 60) return m + " phút trước"; const h = Math.floor(m / 60); if (h < 24) return h + " giờ trước"; const d = Math.floor(h / 24); if (d < 30) return d + " ngày trước"; return (d / 30).toFixed(0) + " tháng trước"; } catch(e) { return ""; } }
 function baseName(p) { return (p||"").split("/").pop(); }
 
 /* note format: phan ghi chu + cac dong "fileN: <path>" */
@@ -217,13 +233,14 @@ function taskCard(t, extraFiles) {
     <div class="t-head">
       <span class="pill ${esc(t.status)}">${t.status === "pending" ? "⏳ chờ" : t.status === "processing" ? "⚙️ đang xử lý" : "✅ done"}</span>
       <span class="t-title" title="${esc(t.title)}">${esc(t.title)}</span>
-      <span class="t-when">${fmtDate(t.created_at)}</span>
+      <span class="t-when">📅 ${fmtDate(t.created_at)} <span class="rel">${fmtRel(t.created_at)}</span></span>
     </div>
     ${extraFiles.length || t.input_file || done ? `<div class="t-files">${chips}</div>` : ""}
     ${t.note ? `<div class="t-note">${esc(t.note)}</div>` : ""}
     <div class="t-actions">
       <button class="btn btn-gray btn-sm" data-edit="${t.id}">✏️ Sửa</button>
       <button class="btn btn-gray btn-sm" data-addfile="${t.id}" data-sec="${t.section_id}">➕ File</button>
+      <button class="btn btn-yellow btn-sm" data-move="${t.id}" data-sec="${t.section_id}">📤 Chuyển tab</button>
       <button class="btn btn-red btn-sm" data-del="${t.id}">🗑 Xóa</button>
     </div>
   </li>`;
@@ -262,7 +279,18 @@ function bindTaskActions(listEl, isOther) {
     });
     inp.click();
   }));
-  listEl.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", async () => {
+  listEl.querySelectorAll("[data-move]").forEach(b => b.addEventListener("click", async () => {
+    const id = b.dataset.move;
+    const curSec = b.dataset.sec;
+    const destSec = curSec === sec6 ? secO : sec6;
+    const destName = destSec === sec6 ? "6 nghỉ 1" : "Công việc khác";
+    if (!confirm("Chuyển yêu cầu này sang tab \"" + destName + "\"?")) return;
+    b.disabled = true;
+    try {
+      await SB.update("board_tasks", id, { section_id: destSec });
+      await load6(); await loadOther();
+    } catch (e) { alert("Lỗi: " + e.message); b.disabled = false; }
+  }));
     const id = b.dataset.del;
     if (!confirm("Xóa đầu việc này?")) return;
     b.disabled = true;
@@ -286,6 +314,7 @@ async function load6() {
   $("#empty6").style.display = tasks6.length ? "none" : "block";
   list.innerHTML = tasks6.map(t => taskCard(t, splitNote(t.note).files)).join("");
   bindTaskActions(list, false);
+  refreshQuickDownloads();
 }
 async function loadOther() {
   const list = $("#listO");
@@ -295,6 +324,18 @@ async function loadOther() {
   $("#emptyO").style.display = tasksO.length ? "none" : "block";
   list.innerHTML = tasksO.map(t => taskCard(t, splitNote(t.note).files)).join("");
   bindTaskActions(list, true);
+  refreshQuickDownloads();
+}
+
+function refreshQuickDownloads() {
+  const all = tasks6.concat(tasksO);
+  const done = all.filter(t => t.status === "done" && t.output_file).slice(0, 8);
+  const card = $("#quickDlCard");
+  if (done.length === 0) { card.style.display = "none"; return; }
+  card.style.display = "block";
+  $("#quickDl").innerHTML = done.map(t =>
+    `<a href="${esc(SB.filePublicUrl(t.output_file))}" download>📥 ${esc(baseName(t.title || t.output_file))}</a>`
+  ).join("");
 }
 
 /* ---- form 6 nghi 1 ---- */
