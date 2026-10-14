@@ -222,7 +222,7 @@ tbody tr:last-child td{border-bottom:none}
         '<td><div class="title-cell">' + esc(r.title) + '</div>' + content + '</td>' +
         '<td>' + r.time + '</td>' +
         '<td>' + methodTag(r.method) + '</td>' +
-        '<td class="muted">' + esc(r.to || '—') + '</td>' +
+        '<td class="muted">' + esc(r.to || 'lily.ngocly@goertek.com') + '</td>' +
         '<td><button class="btn btn-del btn-sm" data-i="'+i+'">🗑 删除</button></td>' +
       '</tr>';
     }).join('');
@@ -236,6 +236,7 @@ tbody tr:last-child td{border-bottom:none}
     var time = document.getElementById('fTime').value;
     var method = document.getElementById('fMethod').value;
     var to = document.getElementById('fTo').value.trim();
+    if(!to){ to = 'lily.ngocly@goertek.com'; }
     var content = document.getElementById('fContent').value.trim();
 
     if(!title){ toast('⚠️ 请输入提醒标题 🌸'); document.getElementById('fTitle').focus(); return; }
