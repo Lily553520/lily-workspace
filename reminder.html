@@ -85,6 +85,7 @@ tbody tr:last-child td{border-bottom:none}
 .tag-sms{background:#e6f8f0;color:#2e9d77}
 .tag-app{background:#e8f4fd;color:#4a8fc4}
 .tag-other{background:#f6eede;color:#c2992e}
+.tag-igoer{background:#eee6fb;color:#7a5bc4}
 .title-cell{font-weight:700}
 .empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px}
 .empty .big{font-size:38px;display:block;margin-bottom:8px;animation:bounce 2.4s infinite}
@@ -105,7 +106,7 @@ tbody tr:last-child td{border-bottom:none}
       <div class="logo">🎀</div>
       <div>
         <h1>可爱提醒</h1>
-        <p>每天的小小日程提醒 · 通过邮件 / 短信发送 💌</p>
+        <p>每天的小小日程提醒 · 通过邮件 / 短信 / iGoer 发送 💌</p>
       </div>
     </div>
     <div class="count" id="totalCount">🧸 0 条提醒</div>
@@ -138,6 +139,7 @@ tbody tr:last-child td{border-bottom:none}
               <option value="email">📧 邮件</option>
               <option value="sms">📱 短信</option>
               <option value="app">💖 应用通知</option>
+              <option value="igoer">💬 iGoer 提醒</option>
               <option value="other">✨ 其他</option>
             </select>
           </div>
@@ -202,6 +204,7 @@ tbody tr:last-child td{border-bottom:none}
     if(m==='email') return '<span class="tag tag-email">📧 邮件</span>';
     if(m==='sms')   return '<span class="tag tag-sms">📱 短信</span>';
     if(m==='app')   return '<span class="tag tag-app">💖 应用</span>';
+    if(m==='igoer') return '<span class="tag tag-igoer">💬 iGoer</span>';
     return '<span class="tag tag-other">✨ 其他</span>';
   }
 
