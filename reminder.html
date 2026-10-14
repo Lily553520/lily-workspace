@@ -243,7 +243,7 @@ tbody tr:last-child td{border-bottom:none}
     if(!date){ toast('⚠️ 请选择日期 📅'); return; }
     if(!time){ toast('⚠️ 请选择时间 ⏰'); return; }
 
-    list.push({ title:title, date:date, time:time, method:method, to:to, content:content });
+    list.push({ id:'r'+Date.now()+'-'+Math.random().toString(36).slice(2,8), title:title, date:date, time:time, method:method, to:to, content:content });
     save(); render();
     document.getElementById('fTitle').value='';
     document.getElementById('fContent').value='';
@@ -258,7 +258,23 @@ tbody tr:last-child td{border-bottom:none}
   }
 
   document.getElementById('btnAdd').addEventListener('click', addItem);
-  document.getElementById('btnSubmit').addEventListener('click', function(){ save(); toast('💾 已保存 ' + list.length + ' 条提醒 💕'); });
+  function submitToServer(items, cb){
+    fetch('http://127.0.0.1:8790/reminders', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(items)
+    }).then(function(r){ if(r.ok){ return r.json(); } throw new Error('HTTP '+r.status); })
+      .then(function(){ cb(true); })
+      .catch(function(){ cb(false); });
+  }
+  document.getElementById('btnSubmit').addEventListener('click', function(){
+    save();
+    if(!list.length){ toast('🧸 还没有提醒哦'); return; }
+    toast('📤 正在提交到服务器…');
+    submitToServer(list, function(ok){
+      toast(ok ? ('📬 已提交 ' + list.length + ' 条提醒 → 到点自动发邮件 ✉️') : '⚠️ 无法连接本地提醒服务器 (127.0.0.1:8790) — 请确认服务器已启动');
+    });
+  });
   document.getElementById('listBody').addEventListener('click', function(e){
     var b = e.target.closest('button[data-i]');
     if(b){ delItem(parseInt(b.getAttribute('data-i'),10)); }
