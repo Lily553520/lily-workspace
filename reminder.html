@@ -149,6 +149,14 @@ tbody tr:last-child td{border-bottom:none}
           </div>
         </div>
         <div class="field">
+          <label>🔁 重复</label>
+          <select id="fRepeat">
+            <option value="once">一次 (不重复)</option>
+            <option value="daily">每天</option>
+            <option value="weekly">每周</option>
+          </select>
+        </div>
+        <div class="field">
           <label>💬 提醒内容 (可选)</label>
           <textarea id="fContent" placeholder="提醒的短信/邮件内容… 🍓"></textarea>
         </div>
@@ -208,6 +216,12 @@ tbody tr:last-child td{border-bottom:none}
     return '<span class="tag tag-other">✨ 其他</span>';
   }
 
+  function repeatTag(rp){
+    if(rp==='daily')  return ' <span class="tag tag-igoer">🔁 每天</span>';
+    if(rp==='weekly') return ' <span class="tag tag-igoer">🔁 每周</span>';
+    return '';
+  }
+
   function render(){
     var body = document.getElementById('listBody');
     var empty = document.getElementById('emptyState');
@@ -219,7 +233,7 @@ tbody tr:last-child td{border-bottom:none}
       var content = r.content ? '<div class="muted">' + esc(r.content) + '</div>' : '';
       return '<tr>' +
         '<td>' + r.date + '</td>' +
-        '<td><div class="title-cell">' + esc(r.title) + '</div>' + content + '</td>' +
+        '<td><div class="title-cell">' + esc(r.title) + '</div>' + content + repeatTag(r.repeat) + '</td>' +
         '<td>' + r.time + '</td>' +
         '<td>' + methodTag(r.method) + '</td>' +
         '<td class="muted">' + esc(r.to || 'lily.ngocly@goertek.com') + '</td>' +
@@ -235,6 +249,7 @@ tbody tr:last-child td{border-bottom:none}
     var date = document.getElementById('fDate').value;
     var time = document.getElementById('fTime').value;
     var method = document.getElementById('fMethod').value;
+    var repeat = document.getElementById('fRepeat').value;
     var to = document.getElementById('fTo').value.trim();
     if(!to){ to = 'lily.ngocly@goertek.com'; }
     var content = document.getElementById('fContent').value.trim();
@@ -243,7 +258,7 @@ tbody tr:last-child td{border-bottom:none}
     if(!date){ toast('⚠️ 请选择日期 📅'); return; }
     if(!time){ toast('⚠️ 请选择时间 ⏰'); return; }
 
-    list.push({ id:'r'+Date.now()+'-'+Math.random().toString(36).slice(2,8), title:title, date:date, time:time, method:method, to:to, content:content });
+    list.push({ id:'r'+Date.now()+'-'+Math.random().toString(36).slice(2,8), title:title, date:date, time:time, method:method, to:to, content:content, repeat:repeat });
     save(); render();
     document.getElementById('fTitle').value='';
     document.getElementById('fContent').value='';
