@@ -287,9 +287,20 @@ tr.hl-red:hover{background:#ffdede}
 
   /* ---------- 本地存储 ---------- */
   function load(){
-    try{ list = JSON.parse(localStorage.getItem(KEY)||'[]'); }catch(e){ list=[]; }
-    if(!Array.isArray(list)) list = [];
-    list = list.map(normalize);
+    // Gộp dữ liệu từ cả key cũ (reminder_schedule_v1) và key hiện tại (v2) — khôi phục dữ liệu nhắc cũ
+    var merged = [];
+    try{
+      var v1 = JSON.parse(localStorage.getItem('reminder_schedule_v1')||'[]');
+      var v2 = JSON.parse(localStorage.getItem('reminder_schedule_v2')||'[]');
+      var arr1 = Array.isArray(v1) ? v1 : [];
+      var arr2 = Array.isArray(v2) ? v2 : [];
+      var seen = {};
+      arr1.concat(arr2).forEach(function(r){
+        if(r && r.id && !seen[r.id]){ seen[r.id] = true; merged.push(r); }
+      });
+      if(!merged.length) merged = (arr1.length ? arr1 : arr2);
+    }catch(e){ merged = []; }
+    list = merged.map(normalize);
   }
   function save(){
     localStorage.setItem(KEY, JSON.stringify(list));
