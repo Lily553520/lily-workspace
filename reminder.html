@@ -103,6 +103,7 @@ tr.hl-red:hover{background:#ffdede}
 .empty .big{font-size:38px;display:block;margin-bottom:8px;animation:bounce 2.4s infinite}
 .muted{color:var(--muted);font-size:12.5px}
 .countdown{display:inline-block;font-size:11.5px;color:var(--pink-d);font-weight:700;background:#fff0f5;padding:2px 8px;border-radius:999px;margin-left:6px;white-space:nowrap}
+.cat-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .history-note{display:block;margin-top:3px;font-size:11.5px;color:var(--gray)}
 
 .wd-row{display:flex;gap:8px;flex-wrap:wrap}
@@ -179,15 +180,26 @@ tr.hl-red:hover{background:#ffdede}
             <input type="text" id="fTo" placeholder="lily.ngocly@goertek.com">
           </div>
         </div>
-        <div class="field">
-          <label>🔁 重复</label>
-          <select id="fRepeat">
-            <option value="once">一次 (不重复)</option>
-            <option value="daily">每天</option>
-            <option value="weekdays">每周 · 指定星期</option>
-            <option value="weekly">每周</option>
-            <option value="monthly">每月</option>
-          </select>
+        <div class="row2">
+          <div class="field">
+            <label>🔁 重复</label>
+            <select id="fRepeat">
+              <option value="once">一次 (不重复)</option>
+              <option value="daily">每天</option>
+              <option value="weekdays">每周 · 指定星期</option>
+              <option value="weekly">每周</option>
+              <option value="monthly">每月</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>🏷️ 分类</label>
+            <select id="fCat">
+              <option value="">无</option>
+              <option value="work">🔴 工作</option>
+              <option value="personal">🟢 个人</option>
+              <option value="periodic">🔵 定期</option>
+            </select>
+          </div>
         </div>
         <div class="field" id="wdField" style="display:none">
           <label>📆 选择星期 (点选)</label>
@@ -269,6 +281,11 @@ tr.hl-red:hover{background:#ffdede}
 (function(){
   var KEY = 'reminder_schedule_v2';
   var WD_NAMES = {1:'一',2:'二',3:'三',4:'四',5:'五',6:'六',7:'日'};
+  var CATS = {
+    work: {label:'工作', color:'#ff5c99'},
+    personal: {label:'个人', color:'#2e9d77'},
+    periodic: {label:'定期', color:'#4a8fc4'}
+  };
   var list = [];
   var currentTab = 'active'; // 'active' | 'history'
   var editingId = null;
@@ -284,6 +301,7 @@ tr.hl-red:hover{background:#ffdede}
       title: r.title || '', date: r.date || '', time: r.time || '', method: r.method || 'email',
       to: r.to || '', content: r.content || '', repeat: r.repeat || 'once',
       weekdays: Array.isArray(r.weekdays) ? r.weekdays : [],
+      star: !!r.star, category: r.category || '',
       archived: !!r.archived, archivedAt: r.archivedAt || null
     };
   }
@@ -390,6 +408,11 @@ tr.hl-red:hover{background:#ffdede}
     if(r.repeat==='monthly') return ' <span class="tag tag-igoer">🔁 每月</span>';
     if(r.repeat==='weekdays') return ' <span class="tag tag-igoer">🔁 每周 · ' + wdLabel(r.weekdays) + '</span>';
     return '';
+  }
+  function catDot(r){
+    var c = CATS[r.category];
+    if(!c) return '';
+    return '<span class="cat-dot" style="background:' + c.color + '" title="' + c.label + '"></span>';
   }
 
   /* ---------- 时间计算 ---------- */
@@ -521,7 +544,7 @@ tr.hl-red:hover{background:#ffdede}
       document.getElementById('listTitle').textContent = '📋 进行中';
       document.getElementById('btnSubmit').style.display = '';
       document.getElementById('fFilter').style.display = '';
-      var fa = applyFilters(a);
+      var fa = applyFilters(a).sort(function(x,y){ return (y.star?1:0) - (x.star?1:0); });
       if(!fa.length){ body.innerHTML=''; setEmpty(true, '🧸', '没有符合条件的提醒 ~<br>在左边添加一个吧 💕'); return; }
       setEmpty(false);
       body.innerHTML = fa.map(function(r){
@@ -532,13 +555,15 @@ tr.hl-red:hover{background:#ffdede}
         else if(diff > 0 && diff <= 24*3600*1000){ cls = 'hl-yellow'; tag = ' <span class="tag tag-other" style="background:#fff3c4;color:#b8860b">⏳ 即将</span>'; }
         var content = r.content ? '<div class="muted">' + esc(r.content) + '</div>' : '';
         var cd = '<span class="countdown" data-next="'+next+'">'+fmtCountdown(next)+'</span>';
+        var starIcon = r.star ? '<span style="color:#ffb400">⭐</span> ' : '';
         return '<tr class="'+cls+'">' +
           '<td>' + esc(r.date) + '</td>' +
-          '<td><div class="title-cell">' + esc(r.title) + '</div>' + content + repeatTag(r) + tag + cd + '</td>' +
+          '<td>' + catDot(r) + starIcon + '<div class="title-cell">' + esc(r.title) + '</div>' + content + repeatTag(r) + tag + cd + '</td>' +
           '<td>' + esc(r.time) + '</td>' +
           '<td>' + methodTag(r.method) + '</td>' +
           '<td class="muted">' + esc(r.to || 'lily.ngocly@goertek.com') + '</td>' +
           '<td style="white-space:nowrap">' +
+            '<button class="btn '+(r.star?'btn-pink':'btn-outline')+' btn-sm" data-sid="'+r.id+'" title="'+(r.star?'取消置顶':'置顶')+'">⭐</button> ' +
             '<button class="btn btn-outline btn-sm" data-eid="'+r.id+'" title="编辑">✏️</button> ' +
             '<button class="btn btn-del btn-sm" data-aid="'+r.id+'">📦 结束</button> ' +
             '<button class="btn btn-del btn-sm" data-did="'+r.id+'">🗑</button>' +
@@ -559,7 +584,7 @@ tr.hl-red:hover{background:#ffdede}
         var ended = r.archivedAt ? new Date(r.archivedAt).toLocaleString() : '';
         return '<tr>' +
           '<td>' + esc(r.date) + '</td>' +
-          '<td><div class="title-cell">' + esc(r.title) + '</div>' + content + repeatTag(r) +
+          '<td>' + catDot(r) + '<div class="title-cell">' + esc(r.title) + '</div>' + content + repeatTag(r) +
             '<span class="history-note">🗂 已结束' + (ended ? ' · ' + ended : '') + '</span></td>' +
           '<td>' + esc(r.time) + '</td>' +
           '<td>' + methodTag(r.method) + '</td>' +
@@ -604,7 +629,8 @@ tr.hl-red:hover{background:#ffdede}
       repeat: repeat,
       weekdays: repeat==='weekdays' ? selectedWd() : [],
       to: document.getElementById('fTo').value.trim() || 'lily.ngocly@goertek.com',
-      content: document.getElementById('fContent').value.trim()
+      content: document.getElementById('fContent').value.trim(),
+      category: document.getElementById('fCat').value
     };
   }
   function resetForm(){
@@ -614,6 +640,7 @@ tr.hl-red:hover{background:#ffdede}
     document.getElementById('fContent').value='';
     document.getElementById('fTo').value='';
     document.getElementById('fRepeat').value='once';
+    document.getElementById('fCat').value='';
     document.getElementById('wdField').style.display='none';
     renderWdChips([1,2,3,4,5]);
     document.getElementById('btnAdd').textContent='🧸 ＋ 添加到列表';
@@ -628,12 +655,12 @@ tr.hl-red:hover{background:#ffdede}
       var i = findById(editingId);
       if(i>=0){
         list[i].title=f.title; list[i].date=f.date; list[i].time=f.time; list[i].method=f.method;
-        list[i].repeat=f.repeat; list[i].weekdays=f.weekdays; list[i].to=f.to; list[i].content=f.content;
+        list[i].repeat=f.repeat; list[i].weekdays=f.weekdays; list[i].to=f.to; list[i].content=f.content; list[i].category=f.category;
         save(); render(); resetForm();
         toast('✅ 已保存修改：' + f.title);
       } else { resetForm(); }
     } else {
-      list.push({ id: genId(), title:f.title, date:f.date, time:f.time, method:f.method, repeat:f.repeat, weekdays:f.weekdays, to:f.to, content:f.content, archived:false });
+      list.push({ id: genId(), title:f.title, date:f.date, time:f.time, method:f.method, repeat:f.repeat, weekdays:f.weekdays, to:f.to, content:f.content, category:f.category, archived:false });
       save(); render(); resetForm();
       document.getElementById('fTitle').focus();
       toast('✅ 已添加：' + f.title + ' 🎀');
@@ -649,6 +676,7 @@ tr.hl-red:hover{background:#ffdede}
     document.getElementById('fTime').value = r.time;
     document.getElementById('fMethod').value = r.method;
     document.getElementById('fRepeat').value = r.repeat;
+    document.getElementById('fCat').value = r.category || '';
     document.getElementById('fTo').value = r.to || '';
     document.getElementById('fContent').value = r.content || '';
     if(r.repeat==='weekdays'){
@@ -674,6 +702,12 @@ tr.hl-red:hover{background:#ffdede}
     list[i].archived = false; delete list[i].archivedAt;
     save(); render();
     toast('↩ 已恢复：' + list[i].title);
+  }
+  function toggleStar(id){
+    var i = findById(id); if(i<0) return;
+    list[i].star = !list[i].star;
+    save(); render();
+    toast(list[i].star ? '⭐ 已置顶：' + list[i].title : '已取消置顶：' + list[i].title);
   }
   function delItem(id){
     var i = findById(id); if(i<0) return;
@@ -755,6 +789,7 @@ tr.hl-red:hover{background:#ffdede}
 
   document.getElementById('listBody').addEventListener('click', function(e){
     var el;
+    if((el = e.target.closest('[data-sid]'))){ toggleStar(el.getAttribute('data-sid')); return; }
     if((el = e.target.closest('[data-eid]'))){ startEdit(el.getAttribute('data-eid')); return; }
     if((el = e.target.closest('[data-aid]'))){ archiveItem(el.getAttribute('data-aid')); return; }
     if((el = e.target.closest('[data-rid]'))){ restoreItem(el.getAttribute('data-rid')); return; }
@@ -770,6 +805,59 @@ tr.hl-red:hover{background:#ffdede}
     });
   }
 
+  /* ---------- 提醒通知 + 声音 ---------- */
+  var soundCtx = null;
+  function ensureSound(){
+    if(!soundCtx){ try{ var AC = window.AudioContext || window.webkitAudioContext; if(AC) soundCtx = new AC(); }catch(e){} }
+    if(soundCtx && soundCtx.state === 'suspended'){ try{ soundCtx.resume(); }catch(e){} }
+  }
+  function playChime(){
+    ensureSound();
+    if(!soundCtx) return;
+    try{
+      var t0 = soundCtx.currentTime;
+      [0, 0.35].forEach(function(off){
+        var o = soundCtx.createOscillator();
+        var g = soundCtx.createGain();
+        o.type = 'sine'; o.frequency.value = 880;
+        o.connect(g); g.connect(soundCtx.destination);
+        var s = t0 + off;
+        g.gain.setValueAtTime(0.0001, s);
+        g.gain.exponentialRampToValueAtTime(0.25, s + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, s + 0.3);
+        o.start(s); o.stop(s + 0.32);
+      });
+    }catch(e){}
+  }
+  function notify(r){
+    if('Notification' in window && Notification.permission === 'granted'){
+      try{
+        var n = new Notification('🔔 ' + (r.title || '提醒'), { body: (r.content ? r.content + '\n' : '') + (r.date||'') + ' ' + (r.time||'') });
+        setTimeout(function(){ n.close(); }, 12000);
+      }catch(e){}
+    }
+    playChime();
+  }
+  var firedKeys = {};
+  function checkDueNotifications(){
+    var nowMs = Date.now();
+    list.forEach(function(r){
+      if(r.archived || !firesToday(r)) return;
+      var t = parseTime(r.time);
+      var fireAt = new Date(); fireAt.setHours(t.hh, t.mm, 0, 0);
+      var fireMs = fireAt.getTime();
+      if(nowMs >= fireMs && nowMs < fireMs + 45000){
+        var key = r.id + '@' + isoDate(new Date()) + ' ' + r.time;
+        if(!firedKeys[key]){ firedKeys[key] = true; notify(r); }
+      }
+    });
+  }
+  function requestNotify(){
+    if('Notification' in window && Notification.permission === 'default'){
+      try{ Notification.requestPermission(); }catch(e){}
+    }
+  }
+
   /* ---------- 初始化 ---------- */
   var now = new Date();
   document.getElementById('fDate').value = isoDate(now);
@@ -780,11 +868,16 @@ tr.hl-red:hover{background:#ffdede}
   render();
   syncFromCloud();
 
-  setInterval(updateCountdowns, 1000);
+  setInterval(function(){
+    updateCountdowns();
+    checkDueNotifications();
+  }, 1000);
   setInterval(function(){
     if(autoArchive()) save();
     render();
   }, 60000);
+  requestNotify();
+  document.addEventListener('click', ensureSound);
 })();
 </script>
 </body>
