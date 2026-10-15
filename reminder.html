@@ -18,7 +18,7 @@ body{
   background:linear-gradient(180deg,#fff0f5,#ffe4ec 60%,#fff0f5);
   color:var(--text);min-height:100vh;
 }
-.wrap{max-width:1120px;margin:0 auto;padding:26px 16px 70px;position:relative;z-index:1}
+.wrap{max-width:1400px;margin:0 auto;padding:26px 16px 70px;position:relative;z-index:1}
 
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
@@ -42,7 +42,7 @@ body{
 .topbar .s1{top:8px;right:90px;transform:rotate(12deg)}
 .topbar .s2{bottom:6px;right:16px;transform:rotate(-10deg);font-size:24px}
 
-.grid{display:grid;grid-template-columns:1fr 1.5fr;gap:20px;align-items:start}
+.grid{display:grid;grid-template-columns:1fr 1.8fr;gap:20px;align-items:start}
 @media(max-width:820px){.grid{grid-template-columns:1fr}}
 .card{
   background:var(--card);border:1.5px solid var(--line);border-radius:22px;
@@ -84,7 +84,8 @@ textarea{resize:vertical;min-height:62px}
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 thead th{text-align:left;padding:11px 12px;background:#fff0f5;color:#e8558a;font-weight:700;font-size:12.5px;border-bottom:1.5px solid var(--line);white-space:nowrap}
-tbody td{padding:12px;border-bottom:1px dashed var(--line);vertical-align:middle}
+tbody td{padding:12px;border-bottom:1px dashed var(--line);vertical-align:middle;white-space:nowrap}
+tbody td:nth-child(2){white-space:normal}
 tbody tr:hover{background:#fff6fa}
 tbody tr:last-child td{border-bottom:none}
 tr.hl-yellow{background:#fffbe6}
@@ -97,7 +98,7 @@ tr.hl-red:hover{background:#ffdede}
 .tag-app{background:#e8f4fd;color:#4a8fc4}
 .tag-other{background:#f6eede;color:#c2992e}
 .tag-igoer{background:#eee6fb;color:#7a5bc4}
-.title-cell{font-weight:700}
+.title-cell{font-weight:700;display:inline}
 .empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px}
 .empty .big{font-size:38px;display:block;margin-bottom:8px;animation:bounce 2.4s infinite}
 .muted{color:var(--muted);font-size:12.5px}
