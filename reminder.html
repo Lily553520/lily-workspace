@@ -47,7 +47,7 @@ body::before,body::after{content:"";position:fixed;z-index:0;pointer-events:none
   background:var(--card);border:1.5px solid var(--line);border-radius:22px;
   box-shadow:var(--shadow);overflow:hidden;
 }
-.card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1.5px dashed var(--line);background:#fff8fb}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1.5px dashed var(--line);background:#fff8fb;flex-wrap:wrap;gap:10px}
 .card-head h2{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
 .card-body{padding:20px}
 
@@ -72,6 +72,8 @@ textarea{resize:vertical;min-height:62px}
 .btn-sm{padding:6px 12px;font-size:12.5px;border-radius:11px}
 .btn-del{background:#fff0f3;color:var(--pink-d);border:1.5px solid #ffc2d4}
 .btn-del:hover{background:var(--pink-d);color:#fff}
+.btn-gray{background:#f3eef0;color:var(--gray);border:1.5px solid #e8dde1}
+.btn-gray:hover{background:var(--gray);color:#fff}
 .actions{display:flex;gap:10px;margin-top:6px}
 
 .table-wrap{overflow-x:auto}
@@ -90,6 +92,7 @@ tbody tr:last-child td{border-bottom:none}
 .empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px}
 .empty .big{font-size:38px;display:block;margin-bottom:8px;animation:bounce 2.4s infinite}
 .muted{color:var(--muted);font-size:12.5px}
+.history-note{display:block;margin-top:3px;font-size:11.5px;color:var(--gray)}
 
 #toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:#ff7bac;color:#fff;padding:12px 20px;border-radius:16px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:99;box-shadow:0 6px 18px rgba(255,123,172,.4)}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -170,15 +173,19 @@ tbody tr:last-child td{border-bottom:none}
     <!-- 列表 -->
     <div class="card">
       <div class="card-head">
-        <h2>📋 提醒列表</h2>
-        <button class="btn btn-mint btn-sm" id="btnSubmit">💾 提交</button>
+        <h2 id="listTitle">📋 提醒列表</h2>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-pink btn-sm" id="tabActive">📋 进行中 <span id="cntActive">0</span></button>
+          <button class="btn btn-del btn-sm" id="tabHistory">📦 历史 <span id="cntHistory">0</span></button>
+          <button class="btn btn-mint btn-sm" id="btnSubmit">💾 提交</button>
+        </div>
       </div>
       <div class="card-body" style="padding:0">
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>日期</th><th>标题</th><th>时间</th><th>方式</th><th>接收人</th><th style="width:70px"></th>
+                <th>日期</th><th>标题</th><th>时间</th><th>方式</th><th>接收人</th><th style="min-width:150px">操作</th>
               </tr>
             </thead>
             <tbody id="listBody"></tbody>
@@ -199,8 +206,14 @@ tbody tr:last-child td{border-bottom:none}
 (function(){
   var KEY = 'reminder_schedule_v1';
   var list = [];
+  var currentTab = 'active'; // 'active' | 'history'
 
-  function load(){ try{ list = JSON.parse(localStorage.getItem(KEY)||'[]'); }catch(e){ list=[]; } }
+  function load(){
+    try{ list = JSON.parse(localStorage.getItem(KEY)||'[]'); }
+    catch(e){ list=[]; }
+    if(!Array.isArray(list)) list = [];
+    list.forEach(function(r){ if(r.archived===undefined) r.archived=false; });
+  }
   function save(){ localStorage.setItem(KEY, JSON.stringify(list)); }
 
   function toast(msg){
@@ -208,6 +221,8 @@ tbody tr:last-child td{border-bottom:none}
     t.textContent = msg; t.classList.add('show');
     clearTimeout(t._t); t._t = setTimeout(function(){ t.classList.remove('show'); }, 1800);
   }
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
   function methodTag(m){
     if(m==='email') return '<span class="tag tag-email">📧 邮件</span>';
@@ -224,27 +239,118 @@ tbody tr:last-child td{border-bottom:none}
     return '';
   }
 
-  function render(){
-    var body = document.getElementById('listBody');
-    var empty = document.getElementById('emptyState');
-    var count = document.getElementById('totalCount');
-    if(!list.length){ body.innerHTML=''; empty.style.display='block'; count.textContent='🧸 0 条提醒'; return; }
-    empty.style.display='none';
-    count.textContent = '🧸 ' + list.length + ' 条提醒';
-    body.innerHTML = list.map(function(r,i){
-      var content = r.content ? '<div class="muted">' + esc(r.content) + '</div>' : '';
-      return '<tr>' +
-        '<td>' + r.date + '</td>' +
-        '<td><div class="title-cell">' + esc(r.title) + '</div>' + content + repeatTag(r.repeat) + '</td>' +
-        '<td>' + r.time + '</td>' +
-        '<td>' + methodTag(r.method) + '</td>' +
-        '<td class="muted">' + esc(r.to || 'lily.ngocly@goertek.com') + '</td>' +
-        '<td><button class="btn btn-del btn-sm" data-i="'+i+'">🗑 删除</button></td>' +
-      '</tr>';
-    }).join('');
+  function findById(id){ for(var i=0;i<list.length;i++) if(list[i].id===id) return i; return -1; }
+
+  function isPast(r){
+    if(!r.date) return false;
+    var dt = new Date(r.date + 'T' + (r.time||'00:00') + ':00');
+    return dt.getTime() < Date.now();
   }
 
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  // 一次性提醒过期后自动归档到历史
+  function autoArchive(){
+    var changed = false;
+    list.forEach(function(r){
+      if(!r.archived && r.repeat==='once' && isPast(r)){
+        r.archived = true; r.archivedAt = new Date().toISOString(); changed = true;
+      }
+    });
+    if(changed) save();
+    return changed;
+  }
+
+  function activeList(){ return list.filter(function(r){ return !r.archived; }); }
+  function historyList(){ return list.filter(function(r){ return r.archived; }); }
+
+  function setEmpty(show, emoji, html){
+    var empty = document.getElementById('emptyState');
+    if(!show){ empty.style.display='none'; return; }
+    empty.style.display='block';
+    empty.innerHTML = '<span class="big">'+emoji+'</span>'+html;
+  }
+
+  function render(){
+    var body = document.getElementById('listBody');
+    var count = document.getElementById('totalCount');
+    var cntActive = document.getElementById('cntActive');
+    var cntHistory = document.getElementById('cntHistory');
+    var a = activeList(), h = historyList();
+    cntActive.textContent = a.length;
+    cntHistory.textContent = h.length;
+    count.textContent = '🧸 ' + a.length + ' 条进行中 · ' + h.length + ' 条历史';
+
+    if(currentTab === 'active'){
+      document.getElementById('tabActive').className = 'btn btn-pink btn-sm';
+      document.getElementById('tabHistory').className = 'btn btn-del btn-sm';
+      document.getElementById('listTitle').textContent = '📋 进行中';
+      document.getElementById('btnSubmit').style.display = '';
+      if(!a.length){ body.innerHTML=''; setEmpty(true, '🧸', '还没有进行中的提醒哦 ~<br>在左边添加一个吧 💕'); return; }
+      setEmpty(false);
+      body.innerHTML = a.map(function(r){
+        var content = r.content ? '<div class="muted">' + esc(r.content) + '</div>' : '';
+        return '<tr>' +
+          '<td>' + esc(r.date) + '</td>' +
+          '<td><div class="title-cell">' + esc(r.title) + '</div>' + content + repeatTag(r.repeat) + '</td>' +
+          '<td>' + esc(r.time) + '</td>' +
+          '<td>' + methodTag(r.method) + '</td>' +
+          '<td class="muted">' + esc(r.to || 'lily.ngocly@goertek.com') + '</td>' +
+          '<td style="white-space:nowrap">' +
+            '<button class="btn btn-del btn-sm" data-aid="'+r.id+'">📦 结束</button> ' +
+            '<button class="btn btn-del btn-sm" data-did="'+r.id+'">🗑 删除</button>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+    } else {
+      document.getElementById('tabActive').className = 'btn btn-del btn-sm';
+      document.getElementById('tabHistory').className = 'btn btn-pink btn-sm';
+      document.getElementById('listTitle').textContent = '📦 历史';
+      document.getElementById('btnSubmit').style.display = 'none';
+      if(!h.length){ body.innerHTML=''; setEmpty(true, '📦', '还没有历史记录哦 ~<br>结束的提醒会出现在这里 🗂'); return; }
+      setEmpty(false);
+      body.innerHTML = h.map(function(r){
+        var content = r.content ? '<div class="muted">' + esc(r.content) + '</div>' : '';
+        var ended = r.archivedAt ? new Date(r.archivedAt).toLocaleString() : '';
+        return '<tr>' +
+          '<td>' + esc(r.date) + '</td>' +
+          '<td><div class="title-cell">' + esc(r.title) + '</div>' + content + repeatTag(r.repeat) +
+            '<span class="history-note">🗂 已结束' + (ended ? ' · ' + ended : '') + '</span></td>' +
+          '<td>' + esc(r.time) + '</td>' +
+          '<td>' + methodTag(r.method) + '</td>' +
+          '<td class="muted">' + esc(r.to || 'lily.ngocly@goertek.com') + '</td>' +
+          '<td style="white-space:nowrap">' +
+            '<button class="btn btn-mint btn-sm" data-rid="'+r.id+'">↩ 恢复</button> ' +
+            '<button class="btn btn-del btn-sm" data-did="'+r.id+'">🗑 删除</button>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+    }
+  }
+
+  function archiveItem(id){
+    var i = findById(id);
+    if(i<0) return;
+    list[i].archived = true;
+    list[i].archivedAt = new Date().toISOString();
+    save(); render();
+    toast('📦 已结束并移入历史：' + list[i].title);
+  }
+
+  function restoreItem(id){
+    var i = findById(id);
+    if(i<0) return;
+    list[i].archived = false;
+    delete list[i].archivedAt;
+    save(); render();
+    toast('↩ 已恢复到进行中：' + list[i].title);
+  }
+
+  function delItem(id){
+    var i = findById(id);
+    if(i<0) return;
+    var name = list[i].title;
+    list.splice(i,1); save(); render();
+    toast('🗑 已删除：' + name);
+  }
 
   function addItem(){
     var title = document.getElementById('fTitle').value.trim();
@@ -260,7 +366,7 @@ tbody tr:last-child td{border-bottom:none}
     if(!date){ toast('⚠️ 请选择日期 📅'); return; }
     if(!time){ toast('⚠️ 请选择时间 ⏰'); return; }
 
-    list.push({ id:'r'+Date.now()+'-'+Math.random().toString(36).slice(2,8), title:title, date:date, time:time, method:method, to:to, content:content, repeat:repeat });
+    list.push({ id:'r'+Date.now()+'-'+Math.random().toString(36).slice(2,8), title:title, date:date, time:time, method:method, to:to, content:content, repeat:repeat, archived:false });
     save(); render();
     document.getElementById('fTitle').value='';
     document.getElementById('fContent').value='';
@@ -268,13 +374,11 @@ tbody tr:last-child td{border-bottom:none}
     toast('✅ 已添加：' + title + ' 🎀');
   }
 
-  function delItem(i){
-    var name = list[i].title;
-    list.splice(i,1); save(); render();
-    toast('🗑 已删除：' + name);
-  }
-
   document.getElementById('btnAdd').addEventListener('click', addItem);
+
+  document.getElementById('tabActive').addEventListener('click', function(){ currentTab='active'; render(); });
+  document.getElementById('tabHistory').addEventListener('click', function(){ currentTab='history'; render(); });
+
   function submitToServer(items, cb){
     fetch('http://127.0.0.1:8790/reminders', {
       method:'POST',
@@ -284,25 +388,35 @@ tbody tr:last-child td{border-bottom:none}
       .then(function(){ cb(true); })
       .catch(function(){ cb(false); });
   }
+
   document.getElementById('btnSubmit').addEventListener('click', function(){
     save();
-    if(!list.length){ toast('🧸 还没有提醒哦'); return; }
+    var items = activeList();
+    if(!items.length){ toast('🧸 还没有进行中的提醒哦'); return; }
     toast('📤 正在提交到服务器…');
-    submitToServer(list, function(ok){
-      toast(ok ? ('📬 已提交 ' + list.length + ' 条提醒 → 到点自动发邮件 ✉️') : '⚠️ 无法连接本地提醒服务器 (127.0.0.1:8790) — 请确认服务器已启动');
+    submitToServer(items, function(ok){
+      toast(ok ? ('📬 已提交 ' + items.length + ' 条提醒 → 到点自动发邮件 ✉️') : '⚠️ 无法连接本地提醒服务器 (127.0.0.1:8790) — 请确认服务器已启动');
     });
   });
+
   document.getElementById('listBody').addEventListener('click', function(e){
-    var b = e.target.closest('button[data-i]');
-    if(b){ delItem(parseInt(b.getAttribute('data-i'),10)); }
+    var bA = e.target.closest('button[data-aid]');
+    if(bA){ archiveItem(bA.getAttribute('data-aid')); return; }
+    var bR = e.target.closest('button[data-rid]');
+    if(bR){ restoreItem(bR.getAttribute('data-rid')); return; }
+    var bD = e.target.closest('button[data-did]');
+    if(bD){ delItem(bD.getAttribute('data-did')); return; }
   });
+
   document.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.id==='fTitle'){ addItem(); } });
 
   var today = new Date();
   var iso = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   document.getElementById('fDate').value = iso;
 
-  load(); render();
+  load();
+  autoArchive();
+  render();
 })();
 </script>
 </body>
