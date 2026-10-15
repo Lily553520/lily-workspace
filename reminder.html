@@ -205,6 +205,10 @@ tr.hl-red:hover{background:#ffdede}
           <label>📆 选择星期 (点选)</label>
           <div class="wd-row" id="wdRow"></div>
         </div>
+        <div class="field" id="mdField" style="display:none">
+          <label>📆 每月日期 (几号)</label>
+          <select id="fMonthDay"></select>
+        </div>
         <div class="field">
           <label>💬 提醒内容 (可选)</label>
           <textarea id="fContent" placeholder="提醒的短信/邮件内容… 🍓"></textarea>
@@ -302,6 +306,7 @@ tr.hl-red:hover{background:#ffdede}
       to: r.to || '', content: r.content || '', repeat: r.repeat || 'once',
       weekdays: Array.isArray(r.weekdays) ? r.weekdays : [],
       star: !!r.star, category: r.category || '',
+      monthDay: r.monthDay || '',
       archived: !!r.archived, archivedAt: r.archivedAt || null
     };
   }
@@ -405,7 +410,7 @@ tr.hl-red:hover{background:#ffdede}
   function repeatTag(r){
     if(r.repeat==='daily')  return ' <span class="tag tag-igoer">🔁 每天</span>';
     if(r.repeat==='weekly') return ' <span class="tag tag-igoer">🔁 每周</span>';
-    if(r.repeat==='monthly') return ' <span class="tag tag-igoer">🔁 每月</span>';
+    if(r.repeat==='monthly') return ' <span class="tag tag-igoer">🔁 每月 · ' + (r.monthDay || (r.date ? String(parseInt(r.date.slice(-2),10)) : '')) + '号</span>';
     if(r.repeat==='weekdays') return ' <span class="tag tag-igoer">🔁 每周 · ' + wdLabel(r.weekdays) + '</span>';
     return '';
   }
@@ -418,6 +423,12 @@ tr.hl-red:hover{background:#ffdede}
   /* ---------- 时间计算 ---------- */
   function parseTime(t){ var hh = parseInt((t||'00:00').slice(0,2),10)||0; var mm = parseInt((t||'00:00').slice(3,5),10)||0; return {hh:hh, mm:mm}; }
   function atDate(d, hh, mm){ var x = new Date(d); x.setHours(hh, mm, 0, 0); return x; }
+  function nextMonthDayDate(dom){
+    var now = new Date();
+    var c = new Date(now.getFullYear(), now.getMonth(), dom);
+    if(c.getTime() < now.getTime()) c = new Date(now.getFullYear(), now.getMonth()+1, dom);
+    return isoDate(c);
+  }
 
   function firesToday(r){
     var now = new Date();
@@ -425,7 +436,7 @@ tr.hl-red:hover{background:#ffdede}
     if(r.repeat==='daily') return true;
     if(r.repeat==='weekly'){ return now.getDay() === (new Date(r.date+'T00:00:00')).getDay(); }
     if(r.repeat==='weekdays'){ var set=(r.weekdays&&r.weekdays.length?r.weekdays:[1,2,3,4,5]).map(function(w){return w%7;}); return set.indexOf(now.getDay())>=0; }
-    if(r.repeat==='monthly'){ return now.getDate() === (new Date(r.date+'T00:00:00')).getDate(); }
+    if(r.repeat==='monthly'){ var md = r.monthDay ? parseInt(r.monthDay,10) : (new Date(r.date+'T00:00:00')).getDate(); return now.getDate() === md; }
     return false;
   }
 
@@ -454,7 +465,7 @@ tr.hl-red:hover{background:#ffdede}
       return atDate(addDays(now,1), t.hh, t.mm);
     }
     if(r.repeat==='monthly'){
-      var dom = start.getDate();
+      var dom = r.monthDay ? parseInt(r.monthDay,10) : start.getDate();
       var c = new Date(now.getFullYear(), now.getMonth(), dom, t.hh, t.mm, 0, 0);
       if(c.getTime() <= now.getTime()) c = new Date(now.getFullYear(), now.getMonth()+1, dom, t.hh, t.mm, 0, 0);
       return c;
@@ -630,7 +641,8 @@ tr.hl-red:hover{background:#ffdede}
       weekdays: repeat==='weekdays' ? selectedWd() : [],
       to: document.getElementById('fTo').value.trim() || 'lily.ngocly@goertek.com',
       content: document.getElementById('fContent').value.trim(),
-      category: document.getElementById('fCat').value
+      category: document.getElementById('fCat').value,
+      monthDay: repeat==='monthly' ? document.getElementById('fMonthDay').value : ''
     };
   }
   function resetForm(){
@@ -641,7 +653,9 @@ tr.hl-red:hover{background:#ffdede}
     document.getElementById('fTo').value='';
     document.getElementById('fRepeat').value='once';
     document.getElementById('fCat').value='';
+    document.getElementById('fMonthDay').value='';
     document.getElementById('wdField').style.display='none';
+    document.getElementById('mdField').style.display='none';
     renderWdChips([1,2,3,4,5]);
     document.getElementById('btnAdd').textContent='🧸 ＋ 添加到列表';
     document.getElementById('btnCancelEdit').style.display='none';
@@ -651,16 +665,17 @@ tr.hl-red:hover{background:#ffdede}
     if(!f.title){ toast('⚠️ 请输入提醒标题 🌸'); document.getElementById('fTitle').focus(); return; }
     if(!f.date){ toast('⚠️ 请选择日期 📅'); return; }
     if(!f.time){ toast('⚠️ 请选择时间 ⏰'); return; }
+    if(f.repeat==='monthly' && f.monthDay){ f.date = nextMonthDayDate(parseInt(f.monthDay,10)); }
     if(editingId){
       var i = findById(editingId);
       if(i>=0){
         list[i].title=f.title; list[i].date=f.date; list[i].time=f.time; list[i].method=f.method;
-        list[i].repeat=f.repeat; list[i].weekdays=f.weekdays; list[i].to=f.to; list[i].content=f.content; list[i].category=f.category;
+        list[i].repeat=f.repeat; list[i].weekdays=f.weekdays; list[i].to=f.to; list[i].content=f.content; list[i].category=f.category; list[i].monthDay=f.monthDay;
         save(); render(); resetForm();
         toast('✅ 已保存修改：' + f.title);
       } else { resetForm(); }
     } else {
-      list.push({ id: genId(), title:f.title, date:f.date, time:f.time, method:f.method, repeat:f.repeat, weekdays:f.weekdays, to:f.to, content:f.content, category:f.category, archived:false });
+      list.push({ id: genId(), title:f.title, date:f.date, time:f.time, method:f.method, repeat:f.repeat, weekdays:f.weekdays, to:f.to, content:f.content, category:f.category, monthDay:f.monthDay, archived:false });
       save(); render(); resetForm();
       document.getElementById('fTitle').focus();
       toast('✅ 已添加：' + f.title + ' 🎀');
@@ -677,6 +692,7 @@ tr.hl-red:hover{background:#ffdede}
     document.getElementById('fMethod').value = r.method;
     document.getElementById('fRepeat').value = r.repeat;
     document.getElementById('fCat').value = r.category || '';
+    document.getElementById('fMonthDay').value = r.monthDay || (r.date ? String(parseInt(r.date.slice(-2),10)) : '');
     document.getElementById('fTo').value = r.to || '';
     document.getElementById('fContent').value = r.content || '';
     if(r.repeat==='weekdays'){
@@ -685,6 +701,7 @@ tr.hl-red:hover{background:#ffdede}
     } else {
       document.getElementById('wdField').style.display='none';
     }
+    document.getElementById('mdField').style.display = (r.repeat==='monthly') ? 'block' : 'none';
     document.getElementById('btnAdd').textContent='💾 保存修改';
     document.getElementById('btnCancelEdit').style.display='';
     toast('✏️ 正在编辑：' + r.title);
@@ -753,6 +770,17 @@ tr.hl-red:hover{background:#ffdede}
   document.getElementById('tabHistory').addEventListener('click', function(){ currentTab='history'; render(); });
   document.getElementById('fRepeat').addEventListener('change', function(){
     document.getElementById('wdField').style.display = (this.value==='weekdays') ? 'block' : 'none';
+    document.getElementById('mdField').style.display = (this.value==='monthly') ? 'block' : 'none';
+    if(this.value==='monthly'){
+      var d = document.getElementById('fDate').value;
+      var dom = d ? parseInt(d.slice(-2),10) : new Date().getDate();
+      document.getElementById('fMonthDay').value = dom;
+      document.getElementById('fDate').value = nextMonthDayDate(dom);
+    }
+  });
+  document.getElementById('fMonthDay').addEventListener('change', function(){
+    var dom = parseInt(this.value,10);
+    if(dom){ document.getElementById('fDate').value = nextMonthDayDate(dom); }
   });
   document.getElementById('fSearch').addEventListener('input', render);
   document.getElementById('fFilter').addEventListener('change', render);
@@ -861,6 +889,15 @@ tr.hl-red:hover{background:#ffdede}
   /* ---------- 初始化 ---------- */
   var now = new Date();
   document.getElementById('fDate').value = isoDate(now);
+  (function(){
+    var sel = document.getElementById('fMonthDay');
+    for(var d=1; d<=31; d++){
+      var o = document.createElement('option');
+      o.value = d;
+      o.textContent = d + '号';
+      sel.appendChild(o);
+    }
+  })();
   initCloud();
   load();
   autoArchive();
