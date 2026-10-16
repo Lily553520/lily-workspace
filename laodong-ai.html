@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>劳动关系 AI 助手</title>
+<title>员工关系 AI 助手</title>
 <link rel="stylesheet" href="assets/style.css">
 <style>
 body{min-width:900px}
@@ -34,8 +34,8 @@ body{min-width:900px}
   <div class="brand">
     <div class="logo">🤖</div>
     <div class="brand-text">
-      <h1>劳动关系 AI 助手</h1>
-      <p>Quan hệ lao động BG · 解答考勤 / 行为 / 保险 / 合同 / CSR thắc mắc của các bộ phận</p>
+      <h1>员工关系 AI 助手</h1>
+      <p>Quan hệ nhân viên BG · 解答考勤 / 行为 / 保险 / 合同 / CSR thắc mắc của các bộ phận</p>
     </div>
   </div>
   <div class="userbox"><span class="online-dot"></span><span class="uname">GoerMate · AI 助手</span></div>
@@ -220,7 +220,7 @@ body{min-width:900px}
     if (r){
       addMsg(r.a, false, r.s);
     } else {
-      addMsg('🤔 Xin lỗi, tôi chưa tìm thấy đáp án chính xác cho câu hỏi này trong kho quy định.\n\n📩 Câu hỏi của bạn sẽ được chuyển thành phiếu hỗ trợ gửi tới HR (quan hệ lao động) để trả lời. Sau khi có đáp án, câu hỏi sẽ được bổ sung vào kho tri thức.\n\n💡 Mẹo: thử đặt câu hỏi ngắn gọn theo chủ đề (考勤 / 请假 / 加班 / 保险 / 合同 / 女职工 / 童工 / 性骚扰 / 强迫劳动…).', false);
+      addMsg('🤔 Xin lỗi, tôi chưa tìm thấy đáp án chính xác cho câu hỏi này trong kho quy định.\n\n📩 Câu hỏi của bạn sẽ được chuyển thành phiếu hỗ trợ gửi tới HR (quan hệ nhân viên) để trả lời. Sau khi có đáp án, câu hỏi sẽ được bổ sung vào kho tri thức.\n\n💡 Mẹo: thử đặt câu hỏi ngắn gọn theo chủ đề (考勤 / 请假 / 加班 / 保险 / 合同 / 女职工 / 童工 / 性骚扰 / 强迫劳动…).', false);
     }
   }
 
@@ -242,7 +242,7 @@ body{min-width:900px}
   input.addEventListener('keydown', function(e){ if (e.key==='Enter'){ document.getElementById('btnSend').click(); } });
 
   renderChips();
-  addMsg('👋 Xin chào! Tôi là trợ lý AI quan hệ lao động.\n\nTôi có thể giải đáp các thắc mắc về:\n• 🕐 考勤 (chấm công, nghỉ phép, tăng ca)\n• 📝 合同 (hợp đồng, 竞业限制, 解除/终止)\n• 🚫 行为/奖惩 (khen thưởng, kỷ luật, sa thải)\n• 🛡️ 保险 (ốm đau, thai sản, thất nghiệp, tai nạn)\n• 👩 女职工/未成年工 (四期保护)\n• ⚖️ CSR (童工, 歧视, 性骚扰, 强迫劳动)\n• 📤 离职 (nghỉ việc)\n\nHãy gõ câu hỏi, hoặc bấm vào câu gợi ý bên dưới 👇', false);
+  addMsg('👋 Xin chào! Tôi là trợ lý AI quan hệ nhân viên.\n\nTôi có thể giải đáp các thắc mắc về:\n• 🕐 考勤 (chấm công, nghỉ phép, tăng ca)\n• 📝 合同 (hợp đồng, 竞业限制, 解除/终止)\n• 🚫 行为/奖惩 (khen thưởng, kỷ luật, sa thải)\n• 🛡️ 保险 (ốm đau, thai sản, thất nghiệp, tai nạn)\n• 👩 女职工/未成年工 (四期保护)\n• ⚖️ CSR (童工, 歧视, 性骚扰, 强迫劳动)\n• 📤 离职 (nghỉ việc)\n\nHãy gõ câu hỏi, hoặc bấm vào câu gợi ý bên dưới 👇', false);
 })();
 </script>
 </body>
