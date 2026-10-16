@@ -4,157 +4,103 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>合规律生成器</title>
+<link rel="stylesheet" href="assets/style.css">
 <script src="assets/xlsx.full.min.js"></script>
 <style>
-:root{
-  --indigo:#6366f1; --violet:#8b5cf6; --blue:#3b82f6; --cyan:#06b6d4;
-  --teal:#10b981; --amber:#f59e0b; --rose:#ef4444;
-  --bg:#eef1f8; --card:#fff; --line:#e7eaf3; --text:#1e293b; --muted:#64748b;
-  --shadow:0 8px 24px rgba(30,41,59,.08);
-  --shadow-lg:0 16px 40px rgba(30,41,59,.14);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,sans-serif;background:radial-gradient(1200px 600px at 100% -10%,#e6e9ff 0%,transparent 60%),radial-gradient(1000px 500px at -10% 110%,#e0f2fe 0%,transparent 55%),var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1000px;margin:0 auto;padding:28px 18px 70px}
-
-.hero{position:relative;overflow:hidden;background:linear-gradient(120deg,#6366f1,#8b5cf6 55%,#7c3aed);color:#fff;border-radius:24px;padding:34px 34px;margin-bottom:22px;box-shadow:0 20px 50px rgba(99,102,241,.35)}
-.hero::before,.hero::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.10);filter:blur(2px)}
-.hero::before{width:200px;height:200px;top:-70px;right:-40px}
-.hero::after{width:140px;height:140px;bottom:-50px;right:120px;background:rgba(255,255,255,.08)}
-.hero .row{display:flex;align-items:center;gap:18px;position:relative;z-index:1}
-.hero .logo{width:62px;height:62px;border-radius:18px;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
-.hero h1{font-size:24px;font-weight:800;letter-spacing:.3px}
-.hero p{font-size:13.5px;opacity:.94;margin-top:6px;font-weight:400}
-.hero .tags{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
-.hero .tags span{background:rgba(255,255,255,.18);padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600}
-
-.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px;margin-bottom:18px;box-shadow:var(--shadow);transition:box-shadow .2s}
-.card:hover{box-shadow:var(--shadow-lg)}
-.card h2{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px}
-.card h2 .step{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:700;box-shadow:0 4px 10px rgba(99,102,241,.35)}
-
-.drop{border:2px dashed #cdd3e8;border-radius:16px;padding:40px;text-align:center;cursor:pointer;transition:.18s;background:linear-gradient(180deg,#fafbff,#f4f6fd)}
-.drop:hover,.drop.drag{border-color:var(--indigo);background:linear-gradient(180deg,#eef1ff,#e6eaff);transform:translateY(-2px)}
-.drop .big{font-size:44px;display:block}
-.drop p{margin-top:10px;color:var(--muted);font-size:13.5px}
-.drop .hint{margin-top:6px;font-size:12px;color:#b4bccb}
-
-.row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-top:16px}
-.fld{display:flex;flex-direction:column;gap:6px}
-.fld label{font-size:12px;color:var(--muted);font-weight:600}
-select,input[type=number]{padding:10px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:14px;background:#fff;color:var(--text);transition:.15s;font-family:inherit}
-select:focus,input[type=number]:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 4px rgba(99,102,241,.12)}
-
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:18px}
-.stat{position:relative;overflow:hidden;border-radius:16px;padding:18px 16px;color:#fff;box-shadow:var(--shadow)}
-.stat .v{font-size:27px;font-weight:800;letter-spacing:.5px}
-.stat .l{font-size:12px;opacity:.92;margin-top:4px;font-weight:600}
-.stat .ic{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:34px;opacity:.3}
-.stat.s1{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
-.stat.s2{background:linear-gradient(135deg,#06b6d4,#3b82f6)}
-.stat.s3{background:linear-gradient(135deg,#10b981,#14b8a6)}
-.stat.s4{background:linear-gradient(135deg,#f59e0b,#f97316)}
-
-.weeksbox-title{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:10px}
-.weeks{display:flex;gap:10px;flex-wrap:wrap}
-.wchip{border-radius:13px;padding:12px 16px;font-size:13.5px;font-weight:700;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.03)}
-.wchip .rng{opacity:.75;font-weight:500;font-size:12px}
-
-.tblwrap{overflow-x:auto;border-radius:14px;border:1px solid var(--line)}
-table.res{width:100%;border-collapse:collapse;font-size:13.5px}
-table.res th{background:#f4f6fc;color:#4a5670;font-weight:700;padding:11px 12px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
-table.res td{border-bottom:1px solid #eef1f8;padding:11px 12px;text-align:center}
-table.res tbody tr:hover{background:#f8fafd}
-table.res tr.total td{background:linear-gradient(135deg,#fef3e2,#fde8cf);font-weight:700;border-top:2px solid #f0d9ae}
-table.res td.pname{text-align:left;font-weight:600}
-.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:700}
-.badge.good{background:#e7f9f0;color:#0a9f6e}
-.badge.warn{background:#fef5e2;color:#d98a00}
-.badge.bad{background:#fdebec;color:#d94a4a}
-
+body{min-width:900px}
+.hidden{display:none!important}
+/* drop zone */
+.drop{border:2px dashed #b6c8e0;border-radius:10px;padding:34px;text-align:center;cursor:pointer;background:#fafcfe;transition:.15s;margin-bottom:16px}
+.drop:hover,.drop.drag{border-color:var(--blue);background:var(--blue-light)}
+.drop .big{font-size:36px}
+.drop p{margin-top:8px;color:var(--muted);font-size:13px}
+.drop .hint{margin-top:5px;font-size:12px;color:#94a3b8}
+/* status */
+#status{margin:0 0 14px;font-size:13px;min-height:20px}
+#status.ok{color:var(--green)}
+#status.err{color:#dc2626}
+/* weeks */
+.weeks{display:flex;gap:8px;flex-wrap:wrap;padding:14px 18px}
+.wchip{background:var(--blue-light);color:var(--blue-deep);border:1px solid #d7e3f4;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600}
+.wchip .rng{opacity:.65;font-weight:400;font-size:12px}
+/* compliance table tweaks */
+#resTable td.pname{text-align:left;font-weight:600}
+#resTable tr.total td{background:#f0f5fb;font-weight:700}
+/* download */
+.dlbar{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-top:18px}
+.dlbar .tip{font-size:12.5px;color:var(--muted);line-height:1.6}
+/* missing mapping */
 table.missing{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
-table.missing th,table.missing td{border:1px solid var(--line);padding:8px 10px;text-align:left}
-table.missing th{background:#f4f6fc}
-table.missing input{width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;font-family:inherit}
-
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 26px;border:none;border-radius:13px;font-size:15px;font-weight:700;cursor:pointer;transition:.18s;color:#fff}
-.btn-green{background:linear-gradient(135deg,#10b981,#0d9668);box-shadow:0 8px 20px rgba(16,185,129,.35)}
-.btn-green:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(16,185,129,.45)}
-.btn-blue{background:linear-gradient(135deg,#6366f1,#7c3aed);box-shadow:0 8px 20px rgba(99,102,241,.35)}
-.btn-blue:hover{transform:translateY(-2px)}
-.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
-#status{font-size:13px;margin-top:14px;min-height:20px;font-weight:600}
-#status.ok{color:var(--teal)}
-#status.err{color:var(--rose)}
-.hidden{display:none}
-.note{font-size:12px;color:#9aa7b5;margin-top:12px;line-height:1.7}
-.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:20px}
+table.missing th,table.missing td{border:1px solid var(--border);padding:7px 10px;text-align:left}
+table.missing th{background:#f0f5fb;color:var(--blue);font-weight:600}
+table.missing input{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit}
 </style>
-
 </head>
 <body>
-<div class="wrap">
 
-  <div class="hero">
-    <div class="row">
-      <div class="logo">📊</div>
-      <div>
-        <h1>合规律生成器</h1>
-        <p>Tải file <b>liuxiuyijiankong-ok</b> lên → tự tạo bảng 合规律 và tải về</p>
-      </div>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">📊</div>
+    <div class="brand-text">
+      <h1>合规律生成器</h1>
+      <p>Tải file liuxiuyijiankong-ok → tự tạo bảng 合规律 (周工时 · 项目 · 合规率)</p>
     </div>
-    <div class="tags"><span>⚡ Tự chia tuần</span><span>🗂 3 sheet</span><span>📈 Tỷ lệ tuân thủ</span><span>🎨 Mapping thông minh</span></div>
   </div>
+  <div class="userbox"><span class="online-dot"></span><span class="uname">GoerMate · AI 助手</span></div>
+</header>
+
+<main class="main">
 
   <!-- Bước 1: tải file -->
-  <div class="card">
-    <h2><span class="step">1</span> Tải file nguồn lên</h2>
-    <div class="drop" id="drop">
-      <div class="big">📥</div>
-      <p>Kéo thả file vào đây, hoặc <b>bấm để chọn</b></p>
-      <p class="hint">File .xlsx — thường tên là <b>liuxiuyijiankong-ok</b>, có sheet chứa cột 工号/姓名/部门</p>
-    </div>
-    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
-    <div class="row">
-      <div class="fld">
-        <label>📅 Tháng</label>
-        <select id="monthSel"></select>
-      </div>
-      <div class="fld">
-        <label>Năm</label>
-        <input type="number" id="yearSel" value="2026" min="2020" max="2035" style="width:90px">
-      </div>
-    </div>
-    <div id="status"></div>
+  <div class="drop" id="drop">
+    <div class="big">📥</div>
+    <p><b>Kéo thả file vào đây</b> hoặc bấm để chọn file .xlsx</p>
+    <p class="hint">File nguồn <b>liuxiuyijiankong-ok</b> — có sheet chứa cột 工号 / 姓名 / 部门 và ngày 01→31</p>
   </div>
+  <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+
+  <div class="toolbar">
+    <div class="tb-group">
+      <span class="tb-label">📅 Tháng</span>
+      <select id="monthSel"></select>
+      <span class="tb-label" style="margin-left:8px">Năm</span>
+      <input type="number" id="yearSel" value="2026" min="2020" max="2035" style="width:84px">
+    </div>
+    <div class="tb-group" style="margin-left:auto">
+      <button class="btn btn-blue" id="btnReGen">🔄 Tạo lại</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
 
   <!-- Bước 2: kết quả -->
   <div id="resultBox" class="hidden">
-    <div class="card">
-      <h2><span class="step">2</span> Kết quả đã sẵn sàng</h2>
-      <div class="stats" id="stats"></div>
-      <div id="weeksBox"></div>
+    <div class="stat-cards small" id="stats" style="grid-template-columns:repeat(4,1fr)"></div>
+
+    <div class="panel" style="margin-bottom:18px">
+      <div class="panel-head"><h3>📅 划分周 (W1–W5)</h3></div>
+      <div class="weeks" id="weeksBox"></div>
     </div>
 
-    <div class="card">
-      <h2><span class="step">3</span> Bảng 合规率 (xem trước)</h2>
-      <div id="resTable"></div>
+    <div class="panel">
+      <div class="panel-head"><h3>📈 合规率</h3></div>
+      <div class="table-wrap" id="resTable"></div>
     </div>
 
-    <div class="card" id="missingCard" style="display:none">
-      <h2>⚠️ Bộ phận mới cần gán dự án</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Gõ tên dự án (项目) cho các bộ phận chưa có mapping, rồi bấm "Lưu & tạo lại".</p>
-      <div id="missingBox"></div>
+    <div class="panel" id="missingCard" style="display:none;margin-top:18px">
+      <div class="panel-head"><h3>⚠️ Bộ phận mới cần gán dự án</h3></div>
+      <div style="padding:16px 18px" id="missingBox"></div>
     </div>
 
-    <div class="card" style="text-align:center">
-      <button class="btn btn-green" id="btnDownload" disabled>⬇️ Tải file 合规律 (.xlsx)</button>
-      <p class="note">File gồm 3 sheet: <b>周工时</b> (dữ liệu + chia tuần + bucket) · <b>项目</b> (mapping) · <b>合规率</b> (tổng hợp tỷ lệ). Có cả công thức + giá trị tính sẵn.</p>
+    <div class="dlbar">
+      <div class="tip">File xuất gồm 3 sheet: <b>周工时</b> (dữ liệu + chia tuần + bucket) · <b>项目</b> (mapping) · <b>合规率</b> (tổng hợp).<br>Có cả công thức + giá trị tính sẵn, mở Excel là thấy số.</div>
+      <button class="btn btn-green" id="btnDownload" disabled>⬇️ Tải file 合规律</button>
     </div>
   </div>
 
-  <div class="footer">Mapping 部门→项目 được lưu trong trình duyệt · Bộ phận mới sẽ tự nhắc gán dự án</div>
-</div>
+</main>
+
+<footer class="footer">合规律生成器 · Mapping 部门→项目 lưu trong trình duyệt · <span id="footNote">Bộ phận mới sẽ tự nhắc gán dự án</span></footer>
 
 <script>
 (function(){
@@ -329,7 +275,6 @@ table.missing input{width:100%;padding:8px 10px;border:1.5px solid var(--line);b
     var unknown=[];
     emps.forEach(function(e){ var p=mapping[e.bm]; if(p)e.proj=p; else {e.proj=''; unknown.push(e.bm);} });
     unknown=unique(unknown);
-    // per-employee week sums + buckets
     emps.forEach(function(e){
       e.W = weeks.map(function(wd){ var s=0; wd.forEach(function(d){s+=(e.days[d]||0);}); return s; });
       var b60=0,b6072=0,b7284=0,b84=0;
@@ -345,43 +290,33 @@ table.missing input{width:100%;padding:8px 10px;border:1.5px solid var(--line);b
     var R=compute(year,month);
     lastResult={year:year,month:month,weeks:R.weeks,emps:R.emps,unknown:R.unknown};
 
-    if(R.unknown.length){
-      renderStats(R);
-      renderWeeks(R);
-      renderMissing(R);
-      document.getElementById('resTable').innerHTML='';
-      document.getElementById('btnDownload').disabled=true;
-      document.getElementById('resultBox').classList.remove('hidden');
-      setStatus('⚠️ Có '+R.unknown.length+' bộ phận chưa có mapping — gán dự án bên dưới rồi bấm "Lưu & tạo lại".','err');
-      return;
-    }
-    document.getElementById('missingCard').style.display='none';
     renderStats(R);
     renderWeeks(R);
+    if(R.unknown.length){ renderMissing(R); document.getElementById('resTable').innerHTML=''; document.getElementById('btnDownload').disabled=true; document.getElementById('resultBox').classList.remove('hidden'); setStatus('⚠️ Có '+R.unknown.length+' bộ phận chưa có mapping — gán dự án bên dưới.','err'); return; }
+    document.getElementById('missingCard').style.display='none';
     renderResult(R);
     document.getElementById('btnDownload').disabled=false;
-    setStatus('✅ Đã xử lý xong '+R.emps.length+' nhân viên · '+R.weeks.length+' tuần · bấm tải file bên dưới.','ok');
+    setStatus('✅ Đã xử lý xong '+R.emps.length+' nhân viên · '+R.weeks.length+' tuần.','ok');
   }
 
   function renderStats(R){
     var depts=unique(R.emps.map(function(e){return e.bm;}));
     document.getElementById('stats').innerHTML =
-      '<div class="stat s1"><span class="ic">👥</span><div class="v">'+R.emps.length+'</div><div class="l">Nhân viên</div></div>'+
-      '<div class="stat s2"><span class="ic">🏢</span><div class="v">'+depts.length+'</div><div class="l">Bộ phận</div></div>'+
-      '<div class="stat s3"><span class="ic">📅</span><div class="v">'+R.weeks.length+'</div><div class="l">Tuần (W)</div></div>'+
-      '<div class="stat s4"><span class="ic">🗓️</span><div class="v">'+R.year+'-'+String(R.month).padStart(2,'0')+'</div><div class="l">Tháng</div></div>';
+      '<div class="stat-card total" style="--c:#2154a5"><div class="label">Nhân viên</div><div class="value">'+R.emps.length+'</div></div>'+
+      '<div class="stat-card k1" style="--c:#22c55e"><div class="label">Bộ phận</div><div class="value">'+depts.length+'</div></div>'+
+      '<div class="stat-card k2" style="--c:#14b8a6"><div class="label">Tuần (W)</div><div class="value">'+R.weeks.length+'</div></div>'+
+      '<div class="stat-card k3" style="--c:#f59e0b"><div class="label">Tháng</div><div class="value">'+R.year+'-'+String(R.month).padStart(2,'0')+'</div></div>';
     document.getElementById('resultBox').classList.remove('hidden');
   }
 
   function renderWeeks(R){
-    var colors=['#fff2cc','#d9ead3','#d0e0f0','#fadbd8','#eee6fb'];
-    var html='<div class="weeksbox-title">📅 Cách chia tuần (W1–W5):</div><div class="weeks">';
+    var colors=['#e0e7ff','#dcfce7','#cffafe','#fef3c7','#f3e8ff'];
+    var html='';
     R.weeks.forEach(function(wd,i){
       var c=colors[i%colors.length];
-      html+='<div class="wchip" style="background:'+c+'">W'+(i+1)+' <span class="rng">ngày '+wd[0]+'–'+wd[wd.length-1]+'</span></div>';
+      html+='<div class="wchip" style="background:'+c+'">W'+(i+1)+' <span class="rng">· ngày '+wd[0]+'–'+wd[wd.length-1]+'</span></div>';
     });
-    if(R.weeks.length===0) html+='<span style="font-size:13px;color:var(--muted)">(không có tuần nào)</span>';
-    html+='</div>';
+    if(R.weeks.length===0) html='<div class="wchip">(không có tuần nào)</div>';
     document.getElementById('weeksBox').innerHTML=html;
   }
 
@@ -392,7 +327,7 @@ table.missing input{width:100%;padding:8px 10px;border:1.5px solid var(--line);b
     projOrder.forEach(function(p){a60[p]=a6072[p]=a7284[p]=a84[p]=0;});
     R.emps.forEach(function(e){ if(e.proj in a60){ a60[e.proj]+=e.b.b60; a6072[e.proj]+=e.b.b6072; a7284[e.proj]+=e.b.b7284; a84[e.proj]+=e.b.b84; } });
 
-    var html='<div class="tblwrap"><table class="res"><thead><tr><th>项目</th><th>≤60H</th><th>60–72H</th><th>72–84H</th><th>&gt;84H</th><th>合计</th><th>合规率</th></tr></thead><tbody>';
+    var html='<table><thead><tr><th>项目</th><th>≤60H</th><th>60–72H</th><th>72–84H</th><th>&gt;84H</th><th>合计</th><th>合规率</th></tr></thead><tbody>';
     var tot60=0,tot6072=0,tot7284=0,tot84=0;
     projOrder.forEach(function(p){
       var j=a60[p]+a6072[p]+a7284[p]+a84[p];
@@ -401,23 +336,23 @@ table.missing input{width:100%;padding:8px 10px;border:1.5px solid var(--line);b
       var g_score=g_ratio>0.40?0:(g_ratio>0.15?80:(g_ratio>0.05?95:100));
       var h_score=h_ratio>0.15?0:(h_ratio>0.05?80:(h_ratio>0.01?95:100));
       var rate=j? (a60[p]*100+a6072[p]*g_score+a7284[p]*h_score)/(j*100) : 0;
-      var badge= rate>=0.92?'good':(rate>=0.8?'warn':'bad');
-      html+='<tr><td class="pname">'+esc(p)+'</td><td>'+a60[p]+'</td><td>'+a6072[p]+'</td><td>'+a7284[p]+'</td><td>'+a84[p]+'</td><td>'+j+'</td><td><span class="badge '+badge+'">'+(rate*100).toFixed(2)+'%</span></td></tr>';
+      var tag= rate>=0.92?'tag-go':(rate>=0.8?'tag-ing':'tag-end');
+      html+='<tr><td class="pname">'+esc(p)+'</td><td>'+a60[p]+'</td><td>'+a6072[p]+'</td><td>'+a7284[p]+'</td><td>'+a84[p]+'</td><td>'+j+'</td><td><span class="tag '+tag+'">'+(rate*100).toFixed(2)+'%</span></td></tr>';
     });
     var totJ=tot60+tot6072+tot7284+tot84;
     var g_ratio=totJ?tot6072/totJ:0, h_ratio=totJ?tot7284/totJ:0;
     var g_score=g_ratio>0.40?0:(g_ratio>0.15?80:(g_ratio>0.05?95:100));
     var h_score=h_ratio>0.15?0:(h_ratio>0.05?80:(h_ratio>0.01?95:100));
     var totRate=totJ? (tot60*100+tot6072*g_score+tot7284*h_score)/(totJ*100) : 0;
-    html+='<tr class="total"><td>越南合计</td><td>'+tot60+'</td><td>'+tot6072+'</td><td>'+tot7284+'</td><td>'+tot84+'</td><td>'+totJ+'</td><td><span class="badge '+(totRate>=0.92?'good':(totRate>=0.8?'warn':'bad'))+'">'+(totRate*100).toFixed(2)+'%</span></td></tr>';
-    html+='</tbody></table></div>';
+    html+='<tr class="total"><td class="pname">越南合计</td><td>'+tot60+'</td><td>'+tot6072+'</td><td>'+tot7284+'</td><td>'+tot84+'</td><td>'+totJ+'</td><td><span class="tag '+(totRate>=0.92?'tag-go':(totRate>=0.8?'tag-ing':'tag-end'))+'">'+(totRate*100).toFixed(2)+'%</span></td></tr>';
+    html+='</tbody></table>';
     document.getElementById('resTable').innerHTML=html;
   }
 
   function renderMissing(R){
     var card=document.getElementById('missingCard');
     card.style.display='block';
-    var html='<table class="missing"><tr><th>部门 (bộ phận)</th><th>项目 (dự án)</th></tr>';
+    var html='<p style="font-size:13px;color:var(--muted);margin-bottom:10px">Gõ tên dự án (项目) cho các bộ phận chưa có mapping, rồi bấm "Lưu & tạo lại".</p><table class="missing"><tr><th>部门 (bộ phận)</th><th>项目 (dự án)</th></tr>';
     R.unknown.forEach(function(d){ html+='<tr><td>'+esc(d)+'</td><td><input data-dept="'+esc(d)+'" placeholder="vd: 量产SBU-D03"></td></tr>'; });
     html+='</table><button class="btn btn-blue" id="btnApply" style="margin-top:12px">💾 Lưu & tạo lại</button>';
     document.getElementById('missingBox').innerHTML=html;
@@ -459,7 +394,7 @@ table.missing input{width:100%;padding:8px 10px;border:1.5px solid var(--line);b
       set(ws1,'AU'+er,{t:'n',v:e.b.b7284,f:'COUNTIFS(AN'+er+':AR'+er+',">72",AN'+er+':AR'+er+',"<=84")'});
       set(ws1,'AV'+er,{t:'n',v:e.b.b84,f:'COUNTIF($AN'+er+':$AR'+er+',">84")'});
     });
-    var colors=['FFF2CC','D9EAD3','D0E0F0','FADBD8','EEE6FB'];
+    var colors=['FFE0E7FF','FFDCFCE7','FFCFFAFE','FFFEF3C7','FFF3E8FF'];
     weeks.forEach(function(wd,wi){ var fill=colors[wi%colors.length]; wd.forEach(function(d){ var ref=XLSX.utils.encode_cell({r:0,c:5+d}); if(ws1[ref]) ws1[ref].s={fill:{fgColor:{rgb:fill}}}; }); });
     XLSX.utils.book_append_sheet(wb,ws1,'周工时');
 
@@ -530,6 +465,7 @@ table.missing input{width:100%;padding:8px 10px;border:1.5px solid var(--line);b
   drop.addEventListener('dragleave',function(){drop.classList.remove('drag');});
   drop.addEventListener('drop',function(e){e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
   document.getElementById('btnDownload').addEventListener('click',buildDownload);
+  document.getElementById('btnReGen').addEventListener('click',function(){ if(sourceWb) process(); else setStatus('⚠️ Hãy tải file lên trước.','err'); });
   document.getElementById('monthSel').addEventListener('change',function(){ if(sourceWb) process(); });
   document.getElementById('yearSel').addEventListener('change',function(){ if(sourceWb) process(); });
 
