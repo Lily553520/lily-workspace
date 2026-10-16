@@ -6,65 +6,130 @@
 <title>合规律生成器</title>
 <script src="assets/xlsx.full.min.js"></script>
 <style>
-:root{--blue:#4a8fc4;--green:#2e9d77;--gray:#666;--line:#e3e8ee;--bg:#f5f7fa}
+:root{
+  --blue:#3a7bd5; --blue2:#2f6ac0; --teal:#2e9d77; --amber:#e6a23c; --red:#d9534f;
+  --bg:#f0f4f9; --card:#fff; --line:#e4e9f0; --text:#2c3e50; --muted:#8a97a5;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:#333;min-height:100vh;padding:24px}
-.wrap{max-width:900px;margin:0 auto}
-.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-h1{font-size:20px;margin-bottom:6px}
-.sub{color:var(--gray);font-size:13px;margin-bottom:16px}
-.drop{border:2px dashed #c3cbd6;border-radius:12px;padding:34px;text-align:center;cursor:pointer;transition:.15s}
-.drop:hover,.drop.drag{border-color:var(--blue);background:#f0f7ff}
-.drop .big{font-size:34px}
-.drop p{margin-top:8px;color:var(--gray);font-size:13px}
-.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-label{font-size:13px;color:var(--gray)}
-select,input[type=number]{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px}
-.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 20px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:.15s}
-.btn-blue{background:var(--blue);color:#fff}
-.btn-blue:hover{background:#3b7fb0}
-.btn-green{background:var(--green);color:#fff}
-.btn-green:hover{background:#268565}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-#status{margin-top:12px;font-size:13px;color:var(--gray);min-height:20px}
-#status.ok{color:var(--green)}
-#status.err{color:#d33}
+body{font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 60px}
+
+.topbar{background:linear-gradient(135deg,#3a7bd5,#2f6ac0 60%,#24509e);color:#fff;border-radius:18px;padding:24px 28px;margin-bottom:20px;box-shadow:0 6px 18px rgba(58,123,213,.25);display:flex;align-items:center;gap:16px}
+.topbar .logo{width:54px;height:54px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:28px}
+.topbar h1{font-size:21px;font-weight:700}
+.topbar p{font-size:13px;opacity:.92;margin-top:4px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.card h2{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h2 .step{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--blue);color:#fff;font-size:13px}
+
+.drop{border:2px dashed #c3cddb;border-radius:14px;padding:36px;text-align:center;cursor:pointer;transition:.15s;background:#fafcff}
+.drop:hover,.drop.drag{border-color:var(--blue);background:#eef4fc}
+.drop .big{font-size:40px}
+.drop p{margin-top:10px;color:var(--muted);font-size:13px}
+.drop .hint{margin-top:6px;font-size:12px;color:#b6c0cc}
+
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-top:14px}
+.fld{display:flex;flex-direction:column;gap:5px}
+.fld label{font-size:12px;color:var(--muted);font-weight:600}
+select,input[type=number]{padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff;color:var(--text)}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:#f7fafd;border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+.stat .v{font-size:24px;font-weight:700;color:var(--blue)}
+.stat .l{font-size:12px;color:var(--muted);margin-top:3px}
+
+.weeks{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.wchip{border-radius:10px;padding:9px 13px;font-size:13px;font-weight:600;border:1px solid transparent}
+.wchip .rng{opacity:.75;font-weight:400;font-size:12px}
+
+table.res{width:100%;border-collapse:collapse;font-size:13px}
+table.res th,table.res td{border:1px solid var(--line);padding:8px 10px;text-align:center}
+table.res th{background:#f2f6fb;color:#4a6785;font-weight:600}
+table.res tr.total td{background:#fbf3e4;font-weight:700}
+table.res td.pname{text-align:left;font-weight:600}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700}
+.badge.good{background:#e6f7ef;color:var(--teal)}
+.badge.warn{background:#fdf3e3;color:var(--amber)}
+.badge.bad{background:#fdecec;color:var(--red)}
+
 table.missing{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
 table.missing th,table.missing td{border:1px solid var(--line);padding:7px 9px;text-align:left}
-table.missing input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px}
-.note{font-size:12px;color:#999;margin-top:10px;line-height:1.6}
+table.missing input{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;transition:.15s;color:#fff}
+.btn-blue{background:linear-gradient(135deg,#3a7bd5,#2f6ac0)}
+.btn-blue:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(58,123,213,.35)}
+.btn-green{background:linear-gradient(135deg,#2e9d77,#248565)}
+.btn-green:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(46,157,119,.35)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+#status{font-size:13px;margin-top:12px;min-height:20px}
+#status.ok{color:var(--teal)}
+#status.err{color:var(--red)}
+.hidden{display:none}
+.note{font-size:12px;color:#9aa7b5;margin-top:12px;line-height:1.7}
+.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:20px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="card">
-    <h1>📊 合规律生成器</h1>
-    <p class="sub">Tải file <b>liuxiuyijiankong-ok</b> lên → tự động tạo bảng 合规律 (周工时 + 项目 + 合规率) và tải về.</p>
 
+  <div class="topbar">
+    <div class="logo">📊</div>
+    <div>
+      <h1>合规律生成器</h1>
+      <p>Tải file <b>liuxiuyijiankong-ok</b> lên → tự tạo bảng 合规律 (周工时 · 项目 · 合规率) và tải về</p>
+    </div>
+  </div>
+
+  <!-- Bước 1: tải file -->
+  <div class="card">
+    <h2><span class="step">1</span> Tải file nguồn lên</h2>
     <div class="drop" id="drop">
       <div class="big">📥</div>
-      <p>Kéo thả file vào đây, hoặc bấm để chọn file .xlsx</p>
+      <p>Kéo thả file vào đây, hoặc <b>bấm để chọn</b></p>
+      <p class="hint">File .xlsx — thường tên là <b>liuxiuyijiankong-ok</b>, có sheet chứa cột 工号/姓名/部门</p>
     </div>
     <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
-
-    <div class="row" style="margin-top:16px">
-      <label>📅 Tháng:</label>
-      <select id="monthSel"></select>
-      <label>Năm:</label>
-      <input type="number" id="yearSel" value="2026" min="2020" max="2035" style="width:90px">
+    <div class="row">
+      <div class="fld">
+        <label>📅 Tháng</label>
+        <select id="monthSel"></select>
+      </div>
+      <div class="fld">
+        <label>Năm</label>
+        <input type="number" id="yearSel" value="2026" min="2020" max="2035" style="width:90px">
+      </div>
     </div>
-
     <div id="status"></div>
+  </div>
 
-    <div id="missingBox" style="display:none"></div>
-
-    <div style="margin-top:14px">
-      <button class="btn btn-green" id="btnGenerate" disabled>⚙️ Tạo & Tải file 合规律</button>
+  <!-- Bước 2: kết quả -->
+  <div id="resultBox" class="hidden">
+    <div class="card">
+      <h2><span class="step">2</span> Kết quả đã sẵn sàng</h2>
+      <div class="stats" id="stats"></div>
+      <div id="weeksBox"></div>
     </div>
 
-    <p class="note">💡 Cách dùng: tải file nguồn lên → trang tự nhận tháng → bấm "Tạo & Tải".<br>
-    Nếu có bộ phận mới chưa có mapping, trang sẽ hiện ô để bạn gõ tên dự án (项目) tương ứng, sau đó bấm tạo lại.</p>
+    <div class="card">
+      <h2><span class="step">3</span> Bảng 合规率 (xem trước)</h2>
+      <div id="resTable"></div>
+    </div>
+
+    <div class="card" id="missingCard" style="display:none">
+      <h2>⚠️ Bộ phận mới cần gán dự án</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Gõ tên dự án (项目) cho các bộ phận chưa có mapping, rồi bấm "Lưu & tạo lại".</p>
+      <div id="missingBox"></div>
+    </div>
+
+    <div class="card" style="text-align:center">
+      <button class="btn btn-green" id="btnDownload" disabled>⬇️ Tải file 合规律 (.xlsx)</button>
+      <p class="note">File gồm 3 sheet: <b>周工时</b> (dữ liệu + chia tuần + bucket) · <b>项目</b> (mapping) · <b>合规率</b> (tổng hợp tỷ lệ). Có cả công thức + giá trị tính sẵn.</p>
+    </div>
   </div>
+
+  <div class="footer">Mapping 部门→项目 được lưu trong trình duyệt · Bộ phận mới sẽ tự nhắc gán dự án</div>
 </div>
 
 <script>
@@ -169,356 +234,284 @@ table.missing input{width:100%;padding:6px 8px;border:1px solid var(--line);bord
     'U01H事业群-量产SBU-制造部-制造三处-PA/A班': '量产SBU-D03',
   };
 
-  // merge with localStorage overrides
-  function loadMapping(){
-    var m = {};
-    for(var k in DEFAULT_MAPPING) m[k] = DEFAULT_MAPPING[k];
-    try{ var s = JSON.parse(localStorage.getItem('heguilu_mapping')||'{}'); for(var k2 in s) m[k2]=s[k2]; }catch(e){}
-    return m;
-  }
-  function saveOverride(dept, proj){
-    var s = {};
-    try{ s = JSON.parse(localStorage.getItem('heguilu_mapping')||'{}'); }catch(e){}
-    s[dept] = proj;
-    localStorage.setItem('heguilu_mapping', JSON.stringify(s));
-  }
-
+  function loadMapping(){ var m={}; for(var k in DEFAULT_MAPPING)m[k]=DEFAULT_MAPPING[k]; try{var s=JSON.parse(localStorage.getItem('heguilu_mapping')||'{}');for(var k2 in s)m[k2]=s[k2];}catch(e){} return m; }
+  function saveOverride(d,p){ var s={}; try{s=JSON.parse(localStorage.getItem('heguilu_mapping')||'{}');}catch(e){} s[d]=p; localStorage.setItem('heguilu_mapping',JSON.stringify(s)); }
   var mapping = loadMapping();
-  var sourceWb = null;
-  var sheet2Name = null;
+  var sourceWb=null, sheet2Name=null, lastResult=null;
 
-  function setStatus(msg, cls){ var el=document.getElementById('status'); el.textContent=msg; el.className=cls||''; }
-
+  function setStatus(m,c){ var el=document.getElementById('status'); el.textContent=m; el.className=c||''; }
   function col(n){ var s=''; while(n>0){ n--; s=String.fromCharCode(65+n%26)+s; n=Math.floor(n/26);} return s; }
+  function num(v){ var n=parseFloat(v); return isNaN(n)?0:n; }
+  function unique(a){ return a.filter(function(v,i){return a.indexOf(v)===i;}); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 
   function handleFile(file){
-    var reader = new FileReader();
-    reader.onload = function(e){
+    var r=new FileReader();
+    r.onload=function(e){
       try{
-        sourceWb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-        // find Sheet2 (has 工号 header)
-        sheet2Name = null;
-        sourceWb.SheetNames.forEach(function(sn){
-          var ws = sourceWb.Sheets[sn];
-          var range = XLSX.utils.decode_range(ws['!ref']);
-          for(var c=range.s.c; c<=range.e.c; c++){
-            var v = ws[XLSX.utils.encode_cell({r:0,c:c})];
-            if(v && v.v==='工号'){ sheet2Name = sn; break; }
-          }
-        });
-        if(!sheet2Name){
-          // fallback: Sheet2
-          if(sourceWb.SheetNames.indexOf('Sheet2')>=0) sheet2Name='Sheet2';
-        }
-        if(!sheet2Name){ setStatus('❌ Không tìm thấy sheet dữ liệu (cần cột "工号")', 'err'); return; }
-
-        // detect month from OT sheets
-        var m = detectMonth(sourceWb.SheetNames);
-        if(m){ document.getElementById('yearSel').value = m.year; document.getElementById('monthSel').value = m.month; }
-        setStatus('✅ Đã đọc file: ' + sourceWb.SheetNames.length + ' sheet, dữ liệu ở "' + sheet2Name + '". Bấm "Tạo & Tải".', 'ok');
-        document.getElementById('btnGenerate').disabled = false;
-      }catch(err){ setStatus('❌ Lỗi đọc file: ' + err.message, 'err'); }
+        sourceWb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        sheet2Name=null;
+        sourceWb.SheetNames.forEach(function(sn){ var ws=sourceWb.Sheets[sn]; var rg=XLSX.utils.decode_range(ws['!ref']||'A1'); for(var c=rg.s.c;c<=rg.e.c;c++){ var v=ws[XLSX.utils.encode_cell({r:0,c:c})]; if(v&&v.v==='工号'){sheet2Name=sn;break;} } });
+        if(!sheet2Name && sourceWb.SheetNames.indexOf('Sheet2')>=0) sheet2Name='Sheet2';
+        if(!sheet2Name){ setStatus('❌ Không tìm thấy sheet dữ liệu (cần cột "工号")','err'); return; }
+        var m=detectMonth(sourceWb.SheetNames);
+        if(m){ document.getElementById('yearSel').value=m.year; document.getElementById('monthSel').value=m.month; }
+        process();
+      }catch(err){ setStatus('❌ Lỗi đọc file: '+err.message,'err'); }
     };
-    reader.readAsArrayBuffer(file);
+    r.readAsArrayBuffer(file);
   }
 
   function detectMonth(names){
-    // look for sheets like "10.4 OT" or "10.4 OT"
-    for(var i=0;i<names.length;i++){
-      var m = names[i].match(/^(\d{1,2})\.\d+\s*OT/);
-      if(m) return { month: parseInt(m[1],10), year: parseInt(document.getElementById('yearSel').value||'2026',10) };
-    }
+    for(var i=0;i<names.length;i++){ var m=names[i].match(/^(\d{1,2})\.\d+\s*OT/); if(m) return {month:parseInt(m[1],10), year:parseInt(document.getElementById('yearSel').value||'2026',10)}; }
     return null;
   }
 
-  // compute weeks (Sun-Sat, majority of days rule)
-  function getWeeks(year, month){ // month 1..12
-    var firstDay = new Date(year, month-1, 1).getDay(); // 0=Sun
-    var daysInMonth = new Date(year, month, 0).getDate();
-    var sunday = 1 - firstDay; // day number of the Sunday of week containing day1
-    var weeks = [];
+  function getWeeks(year,month){
+    var firstDay=new Date(year,month-1,1).getDay();
+    var dim=new Date(year,month,0).getDate();
+    var sun=1-firstDay, weeks=[];
     while(true){
-      var end = sunday + 6;
-      var cnt = 0, days = [];
-      for(var d=sunday; d<=end; d++){
-        if(d>=1 && d<=daysInMonth){ cnt++; days.push(d); }
-      }
+      var end=sun+6, cnt=0, days=[];
+      for(var d=sun;d<=end;d++){ if(d>=1&&d<=dim){cnt++;days.push(d);} }
       if(cnt===0) break;
       if(cnt>=4) weeks.push(days);
-      sunday = end + 1;
+      sun=end+1;
     }
-    return weeks; // array of arrays of day numbers (1..31)
+    return weeks;
   }
 
   function readSheet2(){
-    var ws = sourceWb.Sheets[sheet2Name];
-    var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-    // header row 0: find column indexes
-    var hdr = rows[0];
-    var iGH=null, iXM=null, iBM=null, iDays=[];
-    for(var c=0;c<hdr.length;c++){
-      var h = String(hdr[c]).trim();
-      if(h==='工号') iGH=c;
-      else if(h==='姓名') iXM=c;
-      else if(h==='部门') iBM=c;
-    }
-    // day columns: header = '01'..'31'
-    for(var c=0;c<hdr.length;c++){
-      var h = String(hdr[c]).trim();
-      if(/^\d{2}$/.test(h)){ iDays.push({c:c, d:parseInt(h,10)}); }
-    }
+    var ws=sourceWb.Sheets[sheet2Name];
+    var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    var hdr=rows[0], iGH=null,iXM=null,iBM=null,iDays=[];
+    for(var c=0;c<hdr.length;c++){ var h=String(hdr[c]).trim(); if(h==='工号')iGH=c; else if(h==='姓名')iXM=c; else if(h==='部门')iBM=c; }
+    for(var c2=0;c2<hdr.length;c2++){ var h2=String(hdr[c2]).trim(); if(/^\d{2}$/.test(h2)) iDays.push({c:c2,d:parseInt(h2,10)}); }
     iDays.sort(function(a,b){return a.d-b.d;});
-
-    var emps = [];
+    var emps=[];
     for(var r=1;r<rows.length;r++){
-      var row = rows[r];
-      var gh = String(row[iGH]||'').trim();
-      var bm = String(row[iBM]||'').trim();
-      if(!gh && !bm) continue;
-      var days = {};
-      for(var k=0;k<iDays.length;k++){ days[iDays[k].d] = num(row[iDays[k].c]); }
-      emps.push({ gh:gh, xm:String(row[iXM]||'').trim(), bm:bm, days:days });
+      var row=rows[r], gh=String(row[iGH]||'').trim(), bm=String(row[iBM]||'').trim();
+      if(!gh&&!bm) continue;
+      var days={};
+      for(var k=0;k<iDays.length;k++) days[iDays[k].d]=num(row[iDays[k].c]);
+      emps.push({gh:gh,xm:String(row[iXM]||'').trim(),bm:bm,days:days});
     }
     return emps;
   }
 
-  function num(v){ var n = parseFloat(v); return isNaN(n)?0:n; }
-
-  function buildOutput(){
-    var year = parseInt(document.getElementById('yearSel').value,10);
-    var month = parseInt(document.getElementById('monthSel').value,10);
-    var weeks = getWeeks(year, month);
-    var emps = readSheet2();
-
-    // resolve projects + find unknown
-    var unknown = [];
+  function compute(year,month){
+    var weeks=getWeeks(year,month);
+    var emps=readSheet2();
+    var unknown=[];
+    emps.forEach(function(e){ var p=mapping[e.bm]; if(p)e.proj=p; else {e.proj=''; unknown.push(e.bm);} });
+    unknown=unique(unknown);
+    // per-employee week sums + buckets
     emps.forEach(function(e){
-      var p = mapping[e.bm];
-      if(p){ e.proj = p; } else { e.proj=''; unknown.push(e.bm); }
+      e.W = weeks.map(function(wd){ var s=0; wd.forEach(function(d){s+=(e.days[d]||0);}); return s; });
+      var b60=0,b6072=0,b7284=0,b84=0;
+      e.W.forEach(function(w){ if(w<=60)b60++; else if(w<=72)b6072++; else if(w<=84)b7284++; else b84++; });
+      e.b={b60:b60,b6072:b6072,b7284:b7284,b84:b84};
     });
-    unknown = unique(unknown);
+    return {weeks:weeks, emps:emps, unknown:unknown};
+  }
 
-    if(unknown.length){
-      showMissing(unknown, emps);
-      setStatus('⚠️ Có ' + unknown.length + ' bộ phận chưa có mapping. Điền tên dự án rồi bấm tạo lại.', 'err');
+  function process(){
+    var year=parseInt(document.getElementById('yearSel').value,10);
+    var month=parseInt(document.getElementById('monthSel').value,10);
+    var R=compute(year,month);
+    lastResult={year:year,month:month,weeks:R.weeks,emps:R.emps,unknown:R.unknown};
+
+    if(R.unknown.length){
+      renderStats(R);
+      renderWeeks(R);
+      renderMissing(R);
+      document.getElementById('resTable').innerHTML='';
+      document.getElementById('btnDownload').disabled=true;
+      document.getElementById('resultBox').classList.remove('hidden');
+      setStatus('⚠️ Có '+R.unknown.length+' bộ phận chưa có mapping — gán dự án bên dưới rồi bấm "Lưu & tạo lại".','err');
       return;
     }
-    document.getElementById('missingBox').style.display='none';
+    document.getElementById('missingCard').style.display='none';
+    renderStats(R);
+    renderWeeks(R);
+    renderResult(R);
+    document.getElementById('btnDownload').disabled=false;
+    setStatus('✅ Đã xử lý xong '+R.emps.length+' nhân viên · '+R.weeks.length+' tuần · bấm tải file bên dưới.','ok');
+  }
 
-    // project list (ordered)
-    var projOrder = [];
-    emps.forEach(function(e){ if(e.proj && projOrder.indexOf(e.proj)<0) projOrder.push(e.proj); });
+  function renderStats(R){
+    var depts=unique(R.emps.map(function(e){return e.bm;}));
+    document.getElementById('stats').innerHTML =
+      '<div class="stat"><div class="v">'+R.emps.length+'</div><div class="l">Nhân viên</div></div>'+
+      '<div class="stat"><div class="v">'+depts.length+'</div><div class="l">Bộ phận</div></div>'+
+      '<div class="stat"><div class="v">'+R.weeks.length+'</div><div class="l">Tuần (W)</div></div>'+
+      '<div class="stat"><div class="v">'+R.year+'-'+String(R.month).padStart(2,'0')+'</div><div class="l">Tháng</div></div>';
+    document.getElementById('resultBox').classList.remove('hidden');
+  }
 
-    var wb = XLSX.utils.book_new();
-
-    // ===== 周工时 sheet =====
-    var headers = ['工号','姓名','地区','基准部门','部门','项目'];
-    for(var d=1; d<=31; d++) headers.push(String(d).padStart(2,'0'));
-    headers.push(null,null,'W1','W2','W3','W4','W5','≤60H','60H＜a≤72','72<a≤84','＞84H');
-    var aoa = [headers];
-    emps.forEach(function(e, idx){
-      var r = idx + 1; // 0-based row in aoa, but Excel row = idx+2
-      var row = [e.gh, e.xm, '越南', 'U01H事业群', e.bm];
-      row.push(''); // project placeholder (formula below)
-      for(var d=1; d<=31; d++) row.push(e.days[d]||0);
-      row.push(null,null); // AL, AM
-      // W1..W4
-      var W = weeks.map(function(wd){ var s=0; wd.forEach(function(d){ s+= (e.days[d]||0); }); return s; });
-      row.push(W[0]||0, W[1]||0, W[2]||0, W[3]||0, W.length>4?W[4]:'');
-      var b60=0,b6072=0,b7284=0,b84=0;
-      W.forEach(function(w){ if(typeof w==='number'){ if(w<=60)b60++; else if(w<=72)b6072++; else if(w<=84)b7284++; else b84++; } });
-      row.push(b60,b6072,b7284,b84);
-      aoa.push(row);
+  function renderWeeks(R){
+    var colors=['#fff2cc','#d9ead3','#d0e0f0','#fadbd8','#eee6fb'];
+    var html='<div style="font-size:12px;color:var(--muted);margin-bottom:6px">📅 Cách chia tuần (W1–W5):</div><div class="weeks">';
+    R.weeks.forEach(function(wd,i){
+      var c=colors[i%colors.length];
+      html+='<div class="wchip" style="background:'+c+'">W'+(i+1)+' <span class="rng">ngày '+wd[0]+'–'+wd[wd.length-1]+'</span></div>';
     });
-    var ws1 = XLSX.utils.aoa_to_sheet(aoa);
+    if(R.weeks.length===0) html+='<span style="font-size:13px;color:var(--muted)">(không có tuần nào)</span>';
+    html+='</div>';
+    document.getElementById('weeksBox').innerHTML=html;
+  }
 
-    // formulas for project + W + buckets
-    emps.forEach(function(e, idx){
-      var er = idx + 2; // Excel row (1-based)
-      var F = 'F'+er, AN='AN'+er, AO='AO'+er, AP='AP'+er, AQ='AQ'+er, AS='AS'+er, AT='AT'+er, AU='AU'+er, AV='AV'+er;
-      setCell(ws1, F, { t:'s', v:e.proj, f:'VLOOKUP(E'+er+',项目!A:B,2,0)' });
-      var W = weeks.map(function(wd){ var s=0; wd.forEach(function(d){ s+= (e.days[d]||0); }); return s; });
-      var wrefs = [AN,AO,AP,AQ];
-      for(var k=0;k<4;k++){
-        var wd = weeks[k]||[];
-        var a=wd[0], b=wd[wd.length-1];
-        setCell(ws1, wrefs[k], { t:'n', v:(W[k]||0), f:'SUM('+col(6+a)+er+':'+col(6+b)+er+')' });
-      }
-      var b60=0,b6072=0,b7284=0,b84=0;
-      W.forEach(function(w){ if(typeof w==='number'){ if(w<=60)b60++; else if(w<=72)b6072++; else if(w<=84)b7284++; else b84++; } });
-      setCell(ws1, AS, { t:'n', v:b60, f:'COUNTIF($AN'+er+':$AR'+er+',"<=60")' });
-      setCell(ws1, AT, { t:'n', v:b6072, f:'COUNTIFS(AN'+er+':AR'+er+',">60",AN'+er+':AR'+er+',"<=72")' });
-      setCell(ws1, AU, { t:'n', v:b7284, f:'COUNTIFS(AN'+er+':AR'+er+',">72",AN'+er+':AR'+er+',"<=84")' });
-      setCell(ws1, AV, { t:'n', v:b84, f:'COUNTIF($AN'+er+':$AR'+er+',">84")' });
-    });
-
-    // week coloring
-    var colors = ['FFF2CC','D9EAD3','D0E0F0','FADBD8'];
-    weeks.forEach(function(wd, wi){
-      if(wi>=colors.length) return;
-      var fill = colors[wi];
-      wd.forEach(function(d){
-        var c = 6 + d; // column index (0-based): col G = 6
-        var cellRef = XLSX.utils.encode_cell({r:0, c:c});
-        if(ws1[cellRef]) ws1[cellRef].s = {fill:{fgColor:{rgb:fill}}};
-      });
-    });
-
-    XLSX.utils.book_append_sheet(wb, ws1, '周工时');
-
-    // ===== 项目 sheet =====
-    var seen=[];
-    emps.forEach(function(e){ if(e.bm && seen.indexOf(e.bm)<0) seen.push(e.bm); });
-    var paoa = [['部门全称','项目']];
-    seen.forEach(function(d){ paoa.push([d, mapping[d]||'']); });
-    var ws2 = XLSX.utils.aoa_to_sheet(paoa);
-    XLSX.utils.book_append_sheet(wb, ws2, '项目');
-
-    // ===== 合规率 sheet =====
-    var ws3 = XLSX.utils.aoa_to_sheet([]);
-    // header
-    setCell(ws3,'D3',{t:'s',v:'地区'}); setCell(ws3,'E3',{t:'s',v:'项目'});
-    setCell(ws3,'F3',{t:'s',v:'≤60H'}); setCell(ws3,'G3',{t:'s',v:'60H<WH≤72H'});
-    setCell(ws3,'H3',{t:'s',v:'72H<WH≤84H'}); setCell(ws3,'I3',{t:'s',v:'WH＞84H'}); setCell(ws3,'J3',{t:'s',v:'合计'});
-
-    // aggregate
-    function agg(key){ var d={}; projOrder.forEach(function(p){d[p]=0;}); emps.forEach(function(e){ if(e.proj in d){ d[e.proj]+=key(e); } }); return d; }
-    // compute per-employee bucket first
-    var empBuckets = emps.map(function(e){
-      var W = weeks.map(function(wd){ var s=0; wd.forEach(function(d){ s+=(e.days[d]||0); }); return s; });
-      var b60=0,b6072=0,b7284=0,b84=0;
-      W.forEach(function(w){ if(w<=60)b60++; else if(w<=72)b6072++; else if(w<=84)b7284++; else b84++; });
-      return {b60,b6072,b7284,b84};
-    });
+  function renderResult(R){
+    var projOrder=[];
+    R.emps.forEach(function(e){ if(e.proj && projOrder.indexOf(e.proj)<0) projOrder.push(e.proj); });
     var a60={},a6072={},a7284={},a84={};
     projOrder.forEach(function(p){a60[p]=a6072[p]=a7284[p]=a84[p]=0;});
-    emps.forEach(function(e,i){ if(e.proj in a60){ a60[e.proj]+=empBuckets[i].b60; a6072[e.proj]+=empBuckets[i].b6072; a7284[e.proj]+=empBuckets[i].b7284; a84[e.proj]+=empBuckets[i].b84; } });
+    R.emps.forEach(function(e){ if(e.proj in a60){ a60[e.proj]+=e.b.b60; a6072[e.proj]+=e.b.b6072; a7284[e.proj]+=e.b.b7284; a84[e.proj]+=e.b.b84; } });
 
-    // 合计 rows 4..15
+    var html='<table class="res"><tr><th>项目</th><th>≤60H</th><th>60–72H</th><th>72–84H</th><th>&gt;84H</th><th>合计</th><th>合规率</th></tr>';
+    var tot60=0,tot6072=0,tot7284=0,tot84=0;
+    projOrder.forEach(function(p){
+      var j=a60[p]+a6072[p]+a7284[p]+a84[p];
+      tot60+=a60[p]; tot6072+=a6072[p]; tot7284+=a7284[p]; tot84+=a84[p];
+      var g_ratio=j?a6072[p]/j:0, h_ratio=j?a7284[p]/j:0;
+      var g_score=g_ratio>0.40?0:(g_ratio>0.15?80:(g_ratio>0.05?95:100));
+      var h_score=h_ratio>0.15?0:(h_ratio>0.05?80:(h_ratio>0.01?95:100));
+      var rate=j? (a60[p]*100+a6072[p]*g_score+a7284[p]*h_score)/(j*100) : 0;
+      var badge= rate>=0.92?'good':(rate>=0.8?'warn':'bad');
+      html+='<tr><td class="pname">'+esc(p)+'</td><td>'+a60[p]+'</td><td>'+a6072[p]+'</td><td>'+a7284[p]+'</td><td>'+a84[p]+'</td><td>'+j+'</td><td><span class="badge '+badge+'">'+(rate*100).toFixed(2)+'%</span></td></tr>';
+    });
+    var totJ=tot60+tot6072+tot7284+tot84;
+    var g_ratio=totJ?tot6072/totJ:0, h_ratio=totJ?tot7284/totJ:0;
+    var g_score=g_ratio>0.40?0:(g_ratio>0.15?80:(g_ratio>0.05?95:100));
+    var h_score=h_ratio>0.15?0:(h_ratio>0.05?80:(h_ratio>0.01?95:100));
+    var totRate=totJ? (tot60*100+tot6072*g_score+tot7284*h_score)/(totJ*100) : 0;
+    html+='<tr class="total"><td>越南合计</td><td>'+tot60+'</td><td>'+tot6072+'</td><td>'+tot7284+'</td><td>'+tot84+'</td><td>'+totJ+'</td><td><span class="badge '+(totRate>=0.92?'good':(totRate>=0.8?'warn':'bad'))+'">'+(totRate*100).toFixed(2)+'%</span></td></tr>';
+    html+='</table>';
+    document.getElementById('resTable').innerHTML=html;
+  }
+
+  function renderMissing(R){
+    var card=document.getElementById('missingCard');
+    card.style.display='block';
+    var html='<table class="missing"><tr><th>部门 (bộ phận)</th><th>项目 (dự án)</th></tr>';
+    R.unknown.forEach(function(d){ html+='<tr><td>'+esc(d)+'</td><td><input data-dept="'+esc(d)+'" placeholder="vd: 量产SBU-D03"></td></tr>'; });
+    html+='</table><button class="btn btn-blue" id="btnApply" style="margin-top:12px">💾 Lưu & tạo lại</button>';
+    document.getElementById('missingBox').innerHTML=html;
+    document.getElementById('btnApply').addEventListener('click',function(){
+      R.unknown.forEach(function(d){ var inp=document.querySelector('input[data-dept="'+d+'"]'); var v=inp?inp.value.trim():''; if(v){ mapping[d]=v; saveOverride(d,v); } });
+      process();
+    });
+  }
+
+  function buildDownload(){
+    if(!lastResult) return;
+    var R=lastResult, year=R.year, month=R.month, weeks=R.weeks, emps=R.emps;
+    var projOrder=[];
+    emps.forEach(function(e){ if(e.proj && projOrder.indexOf(e.proj)<0) projOrder.push(e.proj); });
+    var wb=XLSX.utils.book_new();
+
+    var headers=['工号','姓名','地区','基准部门','部门','项目'];
+    for(var d=1;d<=31;d++) headers.push(String(d).padStart(2,'0'));
+    headers.push(null,null,'W1','W2','W3','W4','W5','≤60H','60H＜a≤72','72<a≤84','＞84H');
+    var aoa=[headers];
+    emps.forEach(function(e){
+      var row=[e.gh,e.xm,'越南','U01H事业群',e.bm,''];
+      for(var d=1;d<=31;d++) row.push(e.days[d]||0);
+      row.push(null,null);
+      row.push(e.W[0]||0, e.W[1]||0, e.W[2]||0, e.W[3]||0, e.W.length>4?e.W[4]:'');
+      row.push(e.b.b60,e.b.b6072,e.b.b7284,e.b.b84);
+      aoa.push(row);
+    });
+    var ws1=XLSX.utils.aoa_to_sheet(aoa);
+    emps.forEach(function(e,idx){
+      var er=idx+2;
+      set(ws1,'F'+er,{t:'s',v:e.proj,f:'VLOOKUP(E'+er+',项目!A:B,2,0)'});
+      ['AN','AO','AP','AQ'].forEach(function(L,k){
+        var wd=weeks[k]||[]; if(!wd.length) return;
+        set(ws1,L+er,{t:'n',v:(e.W[k]||0),f:'SUM('+col(6+wd[0])+er+':'+col(6+wd[wd.length-1])+er+')'});
+      });
+      set(ws1,'AS'+er,{t:'n',v:e.b.b60,f:'COUNTIF($AN'+er+':$AR'+er+',"<=60")'});
+      set(ws1,'AT'+er,{t:'n',v:e.b.b6072,f:'COUNTIFS(AN'+er+':AR'+er+',">60",AN'+er+':AR'+er+',"<=72")'});
+      set(ws1,'AU'+er,{t:'n',v:e.b.b7284,f:'COUNTIFS(AN'+er+':AR'+er+',">72",AN'+er+':AR'+er+',"<=84")'});
+      set(ws1,'AV'+er,{t:'n',v:e.b.b84,f:'COUNTIF($AN'+er+':$AR'+er+',">84")'});
+    });
+    var colors=['FFF2CC','D9EAD3','D0E0F0','FADBD8','EEE6FB'];
+    weeks.forEach(function(wd,wi){ var fill=colors[wi%colors.length]; wd.forEach(function(d){ var ref=XLSX.utils.encode_cell({r:0,c:5+d}); if(ws1[ref]) ws1[ref].s={fill:{fgColor:{rgb:fill}}}; }); });
+    XLSX.utils.book_append_sheet(wb,ws1,'周工时');
+
+    var seen=[]; emps.forEach(function(e){ if(e.bm&&seen.indexOf(e.bm)<0) seen.push(e.bm); });
+    var paoa=[['部门全称','项目']]; seen.forEach(function(d){paoa.push([d,mapping[d]||'']);});
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(paoa),'项目');
+
+    var ws3=XLSX.utils.aoa_to_sheet([]);
+    set(ws3,'D3',{t:'s',v:'地区'});set(ws3,'E3',{t:'s',v:'项目'});set(ws3,'F3',{t:'s',v:'≤60H'});set(ws3,'G3',{t:'s',v:'60H<WH≤72H'});set(ws3,'H3',{t:'s',v:'72H<WH≤84H'});set(ws3,'I3',{t:'s',v:'WH＞84H'});set(ws3,'J3',{t:'s',v:'合计'});
+    var a60={},a6072={},a7284={},a84={}; projOrder.forEach(function(p){a60[p]=a6072[p]=a7284[p]=a84[p]=0;});
+    emps.forEach(function(e){ if(e.proj in a60){a60[e.proj]+=e.b.b60;a6072[e.proj]+=e.b.b6072;a7284[e.proj]+=e.b.b7284;a84[e.proj]+=e.b.b84;} });
     projOrder.forEach(function(p,i){
       var r=4+i;
-      setCell(ws3,'D'+r,{t:'s',v:'越南'}); setCell(ws3,'E'+r,{t:'s',v:p});
-      setCell(ws3,'F'+r,{t:'n',v:a60[p],f:'SUMIFS(周工时!AS:AS,周工时!$F:$F,合规率!$E'+r+')'});
-      setCell(ws3,'G'+r,{t:'n',v:a6072[p],f:'SUMIFS(周工时!AT:AT,周工时!$F:$F,合规率!$E'+r+')'});
-      setCell(ws3,'H'+r,{t:'n',v:a7284[p],f:'SUMIFS(周工时!AU:AU,周工时!$F:$F,合规率!$E'+r+')'});
-      setCell(ws3,'I'+r,{t:'n',v:a84[p],f:'SUMIFS(周工时!AV:AV,周工时!$F:$F,合规率!$E'+r+')'});
-      setCell(ws3,'J'+r,{t:'n',v:a60[p]+a6072[p]+a7284[p]+a84[p],f:'SUM(F'+r+':I'+r+')'});
+      set(ws3,'D'+r,{t:'s',v:'越南'});set(ws3,'E'+r,{t:'s',v:p});
+      set(ws3,'F'+r,{t:'n',v:a60[p],f:'SUMIFS(周工时!AS:AS,周工时!$F:$F,合规率!$E'+r+')'});
+      set(ws3,'G'+r,{t:'n',v:a6072[p],f:'SUMIFS(周工时!AT:AT,周工时!$F:$F,合规率!$E'+r+')'});
+      set(ws3,'H'+r,{t:'n',v:a7284[p],f:'SUMIFS(周工时!AU:AU,周工时!$F:$F,合规率!$E'+r+')'});
+      set(ws3,'I'+r,{t:'n',v:a84[p],f:'SUMIFS(周工时!AV:AV,周工时!$F:$F,合规率!$E'+r+')'});
+      set(ws3,'J'+r,{t:'n',v:a60[p]+a6072[p]+a7284[p]+a84[p],f:'SUM(F'+r+':I'+r+')'});
     });
-    setCell(ws3,'C5',{t:'s',v:'周数'});
-    setCell(ws3,'D16',{t:'s',v:'越南合计'});
-    var tot60=0,tot6072=0,tot7284=0,tot84=0;
-    projOrder.forEach(function(p){tot60+=a60[p];tot6072+=a6072[p];tot7284+=a7284[p];tot84+=a84[p];});
-    ['F','G','H','I','J'].forEach(function(L){
-      setCell(ws3,L+'16',{t:'n',v:{F:tot60,G:tot6072,H:tot7284,I:tot84,J:tot60+tot6072+tot7284+tot84}[L],f:'SUM('+L+'4:'+L+'15)'});
-    });
-
-    // 占比 rows 17..28
+    set(ws3,'C5',{t:'s',v:'周数'}); set(ws3,'D16',{t:'s',v:'越南合计'});
+    var tot60=0,tot6072=0,tot7284=0,tot84=0; projOrder.forEach(function(p){tot60+=a60[p];tot6072+=a6072[p];tot7284+=a7284[p];tot84+=a84[p];});
+    ['F','G','H','I','J'].forEach(function(L){ set(ws3,L+'16',{t:'n',v:{F:tot60,G:tot6072,H:tot7284,I:tot84,J:tot60+tot6072+tot7284+tot84}[L],f:'SUM('+L+'4:'+L+'15)'}); });
     projOrder.forEach(function(p,i){
-      var r=17+i, hr=r-13;
-      setCell(ws3,'D'+r,{t:'s',v:'越南'}); setCell(ws3,'E'+r,{t:'s',v:p});
-      var J = a60[p]+a6072[p]+a7284[p]+a84[p];
-      ['F','G','H','I'].forEach(function(L){
-        var val = J? {F:a60,G:a6072,H:a7284,I:a84}[L][p]/J : 0;
-        setCell(ws3,L+r,{t:'n',v:val,f:L+hr+'/$J'+hr});
-      });
-      setCell(ws3,'J'+r,{t:'n',v:J?1:0,f:'J'+hr+'/$J'+hr});
+      var r=17+i,hr=r-13,J=a60[p]+a6072[p]+a7284[p]+a84[p];
+      set(ws3,'D'+r,{t:'s',v:'越南'});set(ws3,'E'+r,{t:'s',v:p});
+      ['F','G','H','I'].forEach(function(L){ var val=J?{F:a60,G:a6072,H:a7284,I:a84}[L][p]/J:0; set(ws3,L+r,{t:'n',v:val,f:L+hr+'/$J'+hr}); });
+      set(ws3,'J'+r,{t:'n',v:J?1:0,f:'J'+hr+'/$J'+hr});
     });
-    setCell(ws3,'C17',{t:'s',v:'占比'});
-    setCell(ws3,'D29',{t:'s',v:'越南合计'});
-    var totJ = tot60+tot6072+tot7284+tot84;
-    ['F','G','H','I'].forEach(function(L){
-      var val = totJ? {F:tot60,G:tot6072,H:tot7284,I:tot84}[L]/totJ : 0;
-      setCell(ws3,L+'29',{t:'n',v:val,f:L+'16/$J16'});
-    });
-    setCell(ws3,'J29',{t:'n',v:totJ?1:0,f:'J16/$J16'});
-
-    // 合规率 rows 30..41
+    set(ws3,'C17',{t:'s',v:'占比'}); set(ws3,'D29',{t:'s',v:'越南合计'});
+    var totJ=tot60+tot6072+tot7284+tot84;
+    ['F','G','H','I'].forEach(function(L){ var val=totJ?{F:tot60,G:tot6072,H:tot7284,I:tot84}[L]/totJ:0; set(ws3,L+'29',{t:'n',v:val,f:L+'16/$J16'}); });
+    set(ws3,'J29',{t:'n',v:totJ?1:0,f:'J16/$J16'});
     projOrder.forEach(function(p,i){
-      var r=30+i, hr=r-26, pr=r-13;
-      setCell(ws3,'D'+r,{t:'s',v:'越南'}); setCell(ws3,'E'+r,{t:'s',v:p});
-      var J = a60[p]+a6072[p]+a7284[p]+a84[p];
-      var Fv = a60[p]*100;
-      var g_ratio = J? a6072[p]/J : 0;
-      var g_score = g_ratio>0.40?0:(g_ratio>0.15?80:(g_ratio>0.05?95:100));
-      var Gv = a6072[p]*g_score;
-      var h_ratio = J? a7284[p]/J : 0;
-      var h_score = h_ratio>0.15?0:(h_ratio>0.05?80:(h_ratio>0.01?95:100));
-      var Hv = a7284[p]*h_score;
-      setCell(ws3,'F'+r,{t:'n',v:Fv,f:'F'+hr+'*100'});
-      setCell(ws3,'G'+r,{t:'n',v:Gv,f:'G'+hr+'*IF(G'+pr+'>40%,0,IF(G'+pr+'>15%,80,IF(G'+pr+'>5%,95,100)))'});
-      setCell(ws3,'H'+r,{t:'n',v:Hv,f:'H'+hr+'*IF(H'+pr+'>15%,0,IF(H'+pr+'>5%,80,IF(H'+pr+'>1%,95,IF(H'+pr+'<=1%,100))))'});
-      setCell(ws3,'I'+r,{t:'n',v:0});
-      var Jv = J? (Fv+Gv+Hv)/(J*100) : 0;
-      setCell(ws3,'J'+r,{t:'n',v:Jv,f:'SUM(F'+r+':I'+r+')/(J'+hr+'*100)'});
+      var r=30+i,hr=r-26,pr=r-13,J=a60[p]+a6072[p]+a7284[p]+a84[p];
+      set(ws3,'D'+r,{t:'s',v:'越南'});set(ws3,'E'+r,{t:'s',v:p});
+      var gr=J?a6072[p]/J:0, hr2=J?a7284[p]/J:0;
+      var gs=gr>0.40?0:(gr>0.15?80:(gr>0.05?95:100));
+      var hs=hr2>0.15?0:(hr2>0.05?80:(hr2>0.01?95:100));
+      set(ws3,'F'+r,{t:'n',v:a60[p]*100,f:'F'+hr+'*100'});
+      set(ws3,'G'+r,{t:'n',v:a6072[p]*gs,f:'G'+hr+'*IF(G'+pr+'>40%,0,IF(G'+pr+'>15%,80,IF(G'+pr+'>5%,95,100)))'});
+      set(ws3,'H'+r,{t:'n',v:a7284[p]*hs,f:'H'+hr+'*IF(H'+pr+'>15%,0,IF(H'+pr+'>5%,80,IF(H'+pr+'>1%,95,IF(H'+pr+'<=1%,100))))'});
+      set(ws3,'I'+r,{t:'n',v:0});
+      set(ws3,'J'+r,{t:'n',v:J?(a60[p]*100+a6072[p]*gs+a7284[p]*hs)/(J*100):0,f:'SUM(F'+r+':I'+r+')/(J'+hr+'*100)'});
     });
-    setCell(ws3,'C30',{t:'s',v:'合规率'});
-    setCell(ws3,'D42',{t:'s',v:'越南合计'});
-    var F42 = tot60*100;
-    var g42_ratio = totJ? tot6072/totJ : 0;
-    var g42_score = g42_ratio>0.40?0:(g42_ratio>0.15?80:(g42_ratio>0.05?95:100));
-    var G42 = tot6072*g42_score;
-    var h42_ratio = totJ? tot7284/totJ : 0;
-    var h42_score = h42_ratio>0.15?0:(h42_ratio>0.05?80:(h42_ratio>0.01?95:100));
-    var H42 = tot7284*h42_score;
-    setCell(ws3,'F42',{t:'n',v:F42,f:'F16*100'});
-    setCell(ws3,'G42',{t:'n',v:G42,f:'G16*IF(G29>40%,0,IF(G29>15%,80,IF(G29>5%,95,100)))'});
-    setCell(ws3,'H42',{t:'n',v:H42,f:'H16*IF(H29>15%,0,IF(H29>5%,80,IF(H29>1%,95,IF(H29<=1%,100))))'});
-    setCell(ws3,'I42',{t:'n',v:0});
-    setCell(ws3,'J42',{t:'n',v:totJ?(F42+G42+H42)/(totJ*100):0,f:'SUM(F42:I42)/(J16*100)'});
-    // M/N/O placeholder
-    setCell(ws3,'L38',{t:'s',v:'越南'});
-    setCell(ws3,'O38',{t:'n',v:0,f:'M38/(N38*100)'});
+    set(ws3,'C30',{t:'s',v:'合规率'}); set(ws3,'D42',{t:'s',v:'越南合计'});
+    var gr2=totJ?tot6072/totJ:0, hr3=totJ?tot7284/totJ:0;
+    var gs2=gr2>0.40?0:(gr2>0.15?80:(gr2>0.05?95:100));
+    var hs2=hr3>0.15?0:(hr3>0.05?80:(hr3>0.01?95:100));
+    set(ws3,'F42',{t:'n',v:tot60*100,f:'F16*100'});
+    set(ws3,'G42',{t:'n',v:tot6072*gs2,f:'G16*IF(G29>40%,0,IF(G29>15%,80,IF(G29>5%,95,100)))'});
+    set(ws3,'H42',{t:'n',v:tot7284*hs2,f:'H16*IF(H29>15%,0,IF(H29>5%,80,IF(H29>1%,95,IF(H29<=1%,100))))'});
+    set(ws3,'I42',{t:'n',v:0});
+    set(ws3,'J42',{t:'n',v:totJ?(tot60*100+tot6072*gs2+tot7284*hs2)/(totJ*100):0,f:'SUM(F42:I42)/(J16*100)'});
+    set(ws3,'L38',{t:'s',v:'越南'}); set(ws3,'O38',{t:'n',v:0,f:'M38/(N38*100)'});
+    XLSX.utils.book_append_sheet(wb,ws3,'合规率');
 
-    XLSX.utils.book_append_sheet(wb, ws3, '合规率');
-
-    var outName = '合规律_' + year + '-' + String(month).padStart(2,'0') + '.xlsx';
-    XLSX.writeFile(wb, outName);
-    setStatus('✅ Đã tạo xong và tải file: ' + outName, 'ok');
+    XLSX.writeFile(wb,'合规律_'+year+'-'+String(month).padStart(2,'0')+'.xlsx');
   }
 
-  function setCell(ws, ref, obj){
-    ws[ref] = obj;
-  }
-
-  function unique(arr){ return arr.filter(function(v,i){ return arr.indexOf(v)===i; }); }
-
-  function showMissing(unknown, emps){
-    var box = document.getElementById('missingBox');
-    var html = '<p style="font-weight:700;color:#d33;margin-top:12px">⚠️ Các bộ phận chưa có mapping — gõ tên dự án (项目):</p><table class="missing"><tr><th>部门 (bộ phận)</th><th>项目 (dự án)</th></tr>';
-    unknown.forEach(function(d){
-      html += '<tr><td>' + esc(d) + '</td><td><input data-dept="'+esc(d)+'" placeholder="vd: 量产SBU-D03"></td></tr>';
-    });
-    html += '</table><button class="btn btn-blue" id="btnApplyMapping" style="margin-top:10px">💾 Lưu mapping & tạo lại</button>';
-    box.innerHTML = html;
-    box.style.display = 'block';
-    document.getElementById('btnApplyMapping').addEventListener('click', function(){
-      unknown.forEach(function(d){
-        var inp = box.querySelector('input[data-dept="'+cssesc(d)+'"]');
-        var v = inp ? inp.value.trim() : '';
-        if(v){ mapping[d]=v; saveOverride(d, v); }
-      });
-      buildOutput();
-    });
-  }
-  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-  function cssesc(s){ return String(s).replace(/"/g,'\\"'); }
+  function set(ws,ref,o){ ws[ref]=o; }
 
   // events
-  var drop = document.getElementById('drop');
-  var fileInput = document.getElementById('fileInput');
-  drop.addEventListener('click', function(){ fileInput.click(); });
-  fileInput.addEventListener('change', function(){ if(this.files[0]) handleFile(this.files[0]); });
-  drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('drag'); });
-  drop.addEventListener('dragleave', function(){ drop.classList.remove('drag'); });
-  drop.addEventListener('drop', function(e){ e.preventDefault(); drop.classList.remove('drag'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+  var drop=document.getElementById('drop'), fi=document.getElementById('fileInput');
+  drop.addEventListener('click',function(){fi.click();});
+  fi.addEventListener('change',function(){ if(this.files[0]) handleFile(this.files[0]); });
+  drop.addEventListener('dragover',function(e){e.preventDefault();drop.classList.add('drag');});
+  drop.addEventListener('dragleave',function(){drop.classList.remove('drag');});
+  drop.addEventListener('drop',function(e){e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+  document.getElementById('btnDownload').addEventListener('click',buildDownload);
+  document.getElementById('monthSel').addEventListener('change',function(){ if(sourceWb) process(); });
+  document.getElementById('yearSel').addEventListener('change',function(){ if(sourceWb) process(); });
 
-  document.getElementById('btnGenerate').addEventListener('click', buildOutput);
-
-  // populate month selector
-  var ms = document.getElementById('monthSel');
-  for(var m=1;m<=12;m++){ var o=document.createElement('option'); o.value=m; o.textContent=m+'月'; ms.appendChild(o); }
-  var now = new Date();
-  ms.value = now.getMonth()+1;
+  var ms=document.getElementById('monthSel');
+  for(var m=1;m<=12;m++){var o=document.createElement('option');o.value=m;o.textContent=m+'月';ms.appendChild(o);}
+  ms.value=new Date().getMonth()+1;
 })();
 </script>
 </body>
