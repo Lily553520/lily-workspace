@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合规律生成器</title>
+<script src="assets/xlsx.full.min.js"></script>
+<style>
+:root{--blue:#4a8fc4;--green:#2e9d77;--gray:#666;--line:#e3e8ee;--bg:#f5f7fa}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:#333;min-height:100vh;padding:24px}
+.wrap{max-width:900px;margin:0 auto}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+h1{font-size:20px;margin-bottom:6px}
+.sub{color:var(--gray);font-size:13px;margin-bottom:16px}
+.drop{border:2px dashed #c3cbd6;border-radius:12px;padding:34px;text-align:center;cursor:pointer;transition:.15s}
+.drop:hover,.drop.drag{border-color:var(--blue);background:#f0f7ff}
+.drop .big{font-size:34px}
+.drop p{margin-top:8px;color:var(--gray);font-size:13px}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+label{font-size:13px;color:var(--gray)}
+select,input[type=number]{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 20px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:.15s}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover{background:#3b7fb0}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:#268565}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+#status{margin-top:12px;font-size:13px;color:var(--gray);min-height:20px}
+#status.ok{color:var(--green)}
+#status.err{color:#d33}
+table.missing{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+table.missing th,table.missing td{border:1px solid var(--line);padding:7px 9px;text-align:left}
+table.missing input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px}
+.note{font-size:12px;color:#999;margin-top:10px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>📊 合规律生成器</h1>
+    <p class="sub">Tải file <b>liuxiuyijiankong-ok</b> lên → tự động tạo bảng 合规律 (周工时 + 项目 + 合规率) và tải về.</p>
+
+    <div class="drop" id="drop">
+      <div class="big">📥</div>
+      <p>Kéo thả file vào đây, hoặc bấm để chọn file .xlsx</p>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+
+    <div class="row" style="margin-top:16px">
+      <label>📅 Tháng:</label>
+      <select id="monthSel"></select>
+      <label>Năm:</label>
+      <input type="number" id="yearSel" value="2026" min="2020" max="2035" style="width:90px">
+    </div>
+
+    <div id="status"></div>
+
+    <div id="missingBox" style="display:none"></div>
+
+    <div style="margin-top:14px">
+      <button class="btn btn-green" id="btnGenerate" disabled>⚙️ Tạo & Tải file 合规律</button>
+    </div>
+
+    <p class="note">💡 Cách dùng: tải file nguồn lên → trang tự nhận tháng → bấm "Tạo & Tải".<br>
+    Nếu có bộ phận mới chưa có mapping, trang sẽ hiện ô để bạn gõ tên dự án (项目) tương ứng, sau đó bấm tạo lại.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var DEFAULT_MAPPING = {
+    'U01H事业群-品质管理平台-制造品质管理中心-FATP制造品质部': 'QAC',
+    'U01H事业群-量产SBU-制造部-制造一处-FATP/A班': '量产SBU-D03',
+    'U01H事业群-量产SBU-制造部-制造一处-OFFLINE/A班': '量产SBU-D03',
+    'U01H事业群-制造管理平台-生产支援部': '制造平台-生产支援部',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造四处-FATP L401/A班': '制造平台-Z01',
+    'U01H事业群-量产SBU-制造部-制造一处-TEST/A班': '量产SBU-D03',
+    'U01H事业群-量产SBU-制造部-制造二处-FATP/A班': '量产SBU-X02',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造五处-FATP L502/A班': '制造平台-Z01',
+    'U01H事业群-量产SBU-制造部-制造一处-PA/A班': '量产SBU-D03',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造一处-FATP L102/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造二处-SUB L2/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造二部-制造一处-PA L101/A班': '制造平台-Z01',
+    'U01H事业群-运营管理平台-物料管理部-原材料仓组': '运营管理平台',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造组': '制造平台-Z01',
+    'U01H事业群-量产SBU-制造部-制造二处-PA/A班': '量产SBU-X02',
+    'U01H事业群-量产SBU-生产支援处-仓储管理组': '量产SBU-生产支援处',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造四处-SUB L4/A班': '制造平台-Z01',
+    'U01H事业群-量产SBU-制造部-制造二处-TEST/A班': '量产SBU-X02',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造二处-FATP L201/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造二处-FATP L202/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造二处-TEST L2/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造一处-FATP L101/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造一处-FATP L101/B班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造三处-TEST L3/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造三处-FATP L302/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造三处-FATP L301/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造二部-制造三处-PA L301/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造三处-SUB L3/A班': '制造平台-Z01',
+    'U01H事业群-品质管理平台-研发与工程品质管理中心-MP可靠性试验部': 'QAC',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造一处-PCBA课-P1102班': 'SMT',
+    'U01H事业群-品质管理平台-制造品质管理中心-来料检验品质部': 'QAC',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造一处-SUB L1/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造一处-TEST L1/A班': '制造平台-Z01',
+    'U01H事业群-量产SBU-制造部-制造一处-TARA/A班': '量产SBU-D03',
+    'U01H事业群-制造管理平台-第一制造中心-制技组': '制造平台-Z01',
+    'U01H事业群-制造管理平台-管理支持部': '制造平台-管理支持部',
+    'U01H事业群-量产SBU-制造部-制造二处-TARA/A班': '量产SBU-X02',
+    'U01H事业群-品质管理平台-制造品质管理中心-SMT制造品质部': 'QAC',
+    'U01H事业群-品质管理平台-研发与工程品质管理中心-NPI可靠性试验部': 'QAC',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造一处-SA课-S2102班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造二处-SA课-S2201班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造一部-制三处-PCBA课-P1201班': 'SMT',
+    'U01H事业群-量产SBU-工程部-设备管理组': '量产SBU-D03',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造二处-SA课-S1201班': 'SMT',
+    'U01H事业群-品质管理平台-制造品质管理中心-出货品质部': 'QAC',
+    'U01H事业群-制造管理平台-第一制造中心-制造二部-制造二处-PA L201/A班': '制造平台-Z01',
+    'U01H事业群-品质管理平台-研发与工程品质管理中心-软件测试部': 'QAC',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造一处-SA课-S1102班': 'SMT',
+    'U01H事业群-工程技术平台-AME中心-ME部': '工程技术平台',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造一处-SA课-S2101班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造一处-SA课-S2103班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造一处-PCBA课-P2101班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造一处-SA课-S1101班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造三处-PCBA课-P1202班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造二处-SA课-S1202班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-物控IC组': 'SMT',
+    'U01H事业群-运营办公室-行政管理部': '运营办公室',
+    'U01H事业群-量产SBU-生产支援处-行政管理组': '量产SBU-生产支援处',
+    'U01H事业群-量产SBU-品质部-出货品质管理组': '量产SBU-D03',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造三处-SA课-S1301班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造三处-SA课-S1302班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造二处-PCBA课-P1202班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造二处-SA课-S2203班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造一处-SA课-S1103班': 'SMT',
+    'U01H事业群-SMT平台-管理支持组': 'SMT',
+    'U01H事业群-SMT平台-生产支援组': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造二处-SA课-S2202班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造一处-SA课-S2104班': 'SMT',
+    'U01H事业群-量产SBU-品质部-制程品质管理组': '量产SBU-D03',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造一处-PCBA课-P2103班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造一处-PCBA课-P2104班': 'SMT',
+    'U01H事业群-SMT平台-工程部-设备工程组': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造一处-PCBA课-P1101班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造二处-SA课-S2204班': 'SMT',
+    'U01H事业群-工程技术平台-AME中心-设备管理部': '工程技术平台',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造二处-SA课-S1203班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造二处-PCBA课-P2202班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造一处-SA课-S1104班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造二部-制造二处-PCBA课-P2201班': 'SMT',
+    'U01H事业群-制造管理平台-第一制造中心-教官组': '制造平台-Z01',
+    'U01H事业群-量产SBU-制造部-制造二处-OFFLINE/A班': '量产SBU-X02',
+    'U01H事业群-制造管理平台-第一制造中心-制造二部-制造一处-新员工班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造二部-制造一处-PA L101/B班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造二部-制造一处-PA L102/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造二部-制造一处-PA L102/B班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造二部-制造一处-PA L103/A班': '制造平台-Z01',
+    'U01H事业群-制造管理平台-第一制造中心-制造二部-制造一处-PA L103/B班': '制造平台-Z01',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造二处-PCBA课-P1201班': 'SMT',
+    'U01H事业群-SMT平台-制造中心-制造一部-制造二处-PCBA课-P1203班': 'SMT',
+    'U01H事业群-制造管理平台-安全管理办公室': '制造管理平台-安全管理办公室',
+    'U01H事业群-量产SBU-制造部-制造三处-FATP/A班': '量产SBU-D03',
+    'U01H事业群-量产SBU-制造部-制造三处-TEST/A班': '量产SBU-D03',
+    'U01H事业群-量产SBU-制造部-制造三处-OFFLINE/A班': '量产SBU-D03',
+    'U01H事业群-量产SBU-制造部-制造三处-TARA/A班': '量产SBU-D03',
+    'U01H事业群-SMT平台-工程部-工艺工程组': 'SMT',
+    'U01H事业群-制造管理平台-第一制造中心-制造一部-制造一处-新员工班': '制造平台-Z01',
+    'U01H事业群-量产SBU-制造部-制造三处-PA/A班': '量产SBU-D03',
+  };
+
+  // merge with localStorage overrides
+  function loadMapping(){
+    var m = {};
+    for(var k in DEFAULT_MAPPING) m[k] = DEFAULT_MAPPING[k];
+    try{ var s = JSON.parse(localStorage.getItem('heguilu_mapping')||'{}'); for(var k2 in s) m[k2]=s[k2]; }catch(e){}
+    return m;
+  }
+  function saveOverride(dept, proj){
+    var s = {};
+    try{ s = JSON.parse(localStorage.getItem('heguilu_mapping')||'{}'); }catch(e){}
+    s[dept] = proj;
+    localStorage.setItem('heguilu_mapping', JSON.stringify(s));
+  }
+
+  var mapping = loadMapping();
+  var sourceWb = null;
+  var sheet2Name = null;
+
+  function setStatus(msg, cls){ var el=document.getElementById('status'); el.textContent=msg; el.className=cls||''; }
+
+  function col(n){ var s=''; while(n>0){ n--; s=String.fromCharCode(65+n%26)+s; n=Math.floor(n/26);} return s; }
+
+  function handleFile(file){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        sourceWb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        // find Sheet2 (has 工号 header)
+        sheet2Name = null;
+        sourceWb.SheetNames.forEach(function(sn){
+          var ws = sourceWb.Sheets[sn];
+          var range = XLSX.utils.decode_range(ws['!ref']);
+          for(var c=range.s.c; c<=range.e.c; c++){
+            var v = ws[XLSX.utils.encode_cell({r:0,c:c})];
+            if(v && v.v==='工号'){ sheet2Name = sn; break; }
+          }
+        });
+        if(!sheet2Name){
+          // fallback: Sheet2
+          if(sourceWb.SheetNames.indexOf('Sheet2')>=0) sheet2Name='Sheet2';
+        }
+        if(!sheet2Name){ setStatus('❌ Không tìm thấy sheet dữ liệu (cần cột "工号")', 'err'); return; }
+
+        // detect month from OT sheets
+        var m = detectMonth(sourceWb.SheetNames);
+        if(m){ document.getElementById('yearSel').value = m.year; document.getElementById('monthSel').value = m.month; }
+        setStatus('✅ Đã đọc file: ' + sourceWb.SheetNames.length + ' sheet, dữ liệu ở "' + sheet2Name + '". Bấm "Tạo & Tải".', 'ok');
+        document.getElementById('btnGenerate').disabled = false;
+      }catch(err){ setStatus('❌ Lỗi đọc file: ' + err.message, 'err'); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function detectMonth(names){
+    // look for sheets like "10.4 OT" or "10.4 OT"
+    for(var i=0;i<names.length;i++){
+      var m = names[i].match(/^(\d{1,2})\.\d+\s*OT/);
+      if(m) return { month: parseInt(m[1],10), year: parseInt(document.getElementById('yearSel').value||'2026',10) };
+    }
+    return null;
+  }
+
+  // compute weeks (Sun-Sat, majority of days rule)
+  function getWeeks(year, month){ // month 1..12
+    var firstDay = new Date(year, month-1, 1).getDay(); // 0=Sun
+    var daysInMonth = new Date(year, month, 0).getDate();
+    var sunday = 1 - firstDay; // day number of the Sunday of week containing day1
+    var weeks = [];
+    while(true){
+      var end = sunday + 6;
+      var cnt = 0, days = [];
+      for(var d=sunday; d<=end; d++){
+        if(d>=1 && d<=daysInMonth){ cnt++; days.push(d); }
+      }
+      if(cnt===0) break;
+      if(cnt>=4) weeks.push(days);
+      sunday = end + 1;
+    }
+    return weeks; // array of arrays of day numbers (1..31)
+  }
+
+  function readSheet2(){
+    var ws = sourceWb.Sheets[sheet2Name];
+    var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    // header row 0: find column indexes
+    var hdr = rows[0];
+    var iGH=null, iXM=null, iBM=null, iDays=[];
+    for(var c=0;c<hdr.length;c++){
+      var h = String(hdr[c]).trim();
+      if(h==='工号') iGH=c;
+      else if(h==='姓名') iXM=c;
+      else if(h==='部门') iBM=c;
+    }
+    // day columns: header = '01'..'31'
+    for(var c=0;c<hdr.length;c++){
+      var h = String(hdr[c]).trim();
+      if(/^\d{2}$/.test(h)){ iDays.push({c:c, d:parseInt(h,10)}); }
+    }
+    iDays.sort(function(a,b){return a.d-b.d;});
+
+    var emps = [];
+    for(var r=1;r<rows.length;r++){
+      var row = rows[r];
+      var gh = String(row[iGH]||'').trim();
+      var bm = String(row[iBM]||'').trim();
+      if(!gh && !bm) continue;
+      var days = {};
+      for(var k=0;k<iDays.length;k++){ days[iDays[k].d] = num(row[iDays[k].c]); }
+      emps.push({ gh:gh, xm:String(row[iXM]||'').trim(), bm:bm, days:days });
+    }
+    return emps;
+  }
+
+  function num(v){ var n = parseFloat(v); return isNaN(n)?0:n; }
+
+  function buildOutput(){
+    var year = parseInt(document.getElementById('yearSel').value,10);
+    var month = parseInt(document.getElementById('monthSel').value,10);
+    var weeks = getWeeks(year, month);
+    var emps = readSheet2();
+
+    // resolve projects + find unknown
+    var unknown = [];
+    emps.forEach(function(e){
+      var p = mapping[e.bm];
+      if(p){ e.proj = p; } else { e.proj=''; unknown.push(e.bm); }
+    });
+    unknown = unique(unknown);
+
+    if(unknown.length){
+      showMissing(unknown, emps);
+      setStatus('⚠️ Có ' + unknown.length + ' bộ phận chưa có mapping. Điền tên dự án rồi bấm tạo lại.', 'err');
+      return;
+    }
+    document.getElementById('missingBox').style.display='none';
+
+    // project list (ordered)
+    var projOrder = [];
+    emps.forEach(function(e){ if(e.proj && projOrder.indexOf(e.proj)<0) projOrder.push(e.proj); });
+
+    var wb = XLSX.utils.book_new();
+
+    // ===== 周工时 sheet =====
+    var headers = ['工号','姓名','地区','基准部门','部门','项目'];
+    for(var d=1; d<=31; d++) headers.push(String(d).padStart(2,'0'));
+    headers.push(null,null,'W1','W2','W3','W4','W5','≤60H','60H＜a≤72','72<a≤84','＞84H');
+    var aoa = [headers];
+    emps.forEach(function(e, idx){
+      var r = idx + 1; // 0-based row in aoa, but Excel row = idx+2
+      var row = [e.gh, e.xm, '越南', 'U01H事业群', e.bm];
+      row.push(''); // project placeholder (formula below)
+      for(var d=1; d<=31; d++) row.push(e.days[d]||0);
+      row.push(null,null); // AL, AM
+      // W1..W4
+      var W = weeks.map(function(wd){ var s=0; wd.forEach(function(d){ s+= (e.days[d]||0); }); return s; });
+      row.push(W[0]||0, W[1]||0, W[2]||0, W[3]||0, W.length>4?W[4]:'');
+      var b60=0,b6072=0,b7284=0,b84=0;
+      W.forEach(function(w){ if(typeof w==='number'){ if(w<=60)b60++; else if(w<=72)b6072++; else if(w<=84)b7284++; else b84++; } });
+      row.push(b60,b6072,b7284,b84);
+      aoa.push(row);
+    });
+    var ws1 = XLSX.utils.aoa_to_sheet(aoa);
+
+    // formulas for project + W + buckets
+    emps.forEach(function(e, idx){
+      var er = idx + 2; // Excel row (1-based)
+      var F = 'F'+er, AN='AN'+er, AO='AO'+er, AP='AP'+er, AQ='AQ'+er, AS='AS'+er, AT='AT'+er, AU='AU'+er, AV='AV'+er;
+      setCell(ws1, F, { t:'s', v:e.proj, f:'VLOOKUP(E'+er+',项目!A:B,2,0)' });
+      var W = weeks.map(function(wd){ var s=0; wd.forEach(function(d){ s+= (e.days[d]||0); }); return s; });
+      var wrefs = [AN,AO,AP,AQ];
+      for(var k=0;k<4;k++){
+        var wd = weeks[k]||[];
+        var a=wd[0], b=wd[wd.length-1];
+        setCell(ws1, wrefs[k], { t:'n', v:(W[k]||0), f:'SUM('+col(6+a)+er+':'+col(6+b)+er+')' });
+      }
+      var b60=0,b6072=0,b7284=0,b84=0;
+      W.forEach(function(w){ if(typeof w==='number'){ if(w<=60)b60++; else if(w<=72)b6072++; else if(w<=84)b7284++; else b84++; } });
+      setCell(ws1, AS, { t:'n', v:b60, f:'COUNTIF($AN'+er+':$AR'+er+',"<=60")' });
+      setCell(ws1, AT, { t:'n', v:b6072, f:'COUNTIFS(AN'+er+':AR'+er+',">60",AN'+er+':AR'+er+',"<=72")' });
+      setCell(ws1, AU, { t:'n', v:b7284, f:'COUNTIFS(AN'+er+':AR'+er+',">72",AN'+er+':AR'+er+',"<=84")' });
+      setCell(ws1, AV, { t:'n', v:b84, f:'COUNTIF($AN'+er+':$AR'+er+',">84")' });
+    });
+
+    // week coloring
+    var colors = ['FFF2CC','D9EAD3','D0E0F0','FADBD8'];
+    weeks.forEach(function(wd, wi){
+      if(wi>=colors.length) return;
+      var fill = colors[wi];
+      wd.forEach(function(d){
+        var c = 6 + d; // column index (0-based): col G = 6
+        var cellRef = XLSX.utils.encode_cell({r:0, c:c});
+        if(ws1[cellRef]) ws1[cellRef].s = {fill:{fgColor:{rgb:fill}}};
+      });
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws1, '周工时');
+
+    // ===== 项目 sheet =====
+    var seen=[];
+    emps.forEach(function(e){ if(e.bm && seen.indexOf(e.bm)<0) seen.push(e.bm); });
+    var paoa = [['部门全称','项目']];
+    seen.forEach(function(d){ paoa.push([d, mapping[d]||'']); });
+    var ws2 = XLSX.utils.aoa_to_sheet(paoa);
+    XLSX.utils.book_append_sheet(wb, ws2, '项目');
+
+    // ===== 合规率 sheet =====
+    var ws3 = XLSX.utils.aoa_to_sheet([]);
+    // header
+    setCell(ws3,'D3',{t:'s',v:'地区'}); setCell(ws3,'E3',{t:'s',v:'项目'});
+    setCell(ws3,'F3',{t:'s',v:'≤60H'}); setCell(ws3,'G3',{t:'s',v:'60H<WH≤72H'});
+    setCell(ws3,'H3',{t:'s',v:'72H<WH≤84H'}); setCell(ws3,'I3',{t:'s',v:'WH＞84H'}); setCell(ws3,'J3',{t:'s',v:'合计'});
+
+    // aggregate
+    function agg(key){ var d={}; projOrder.forEach(function(p){d[p]=0;}); emps.forEach(function(e){ if(e.proj in d){ d[e.proj]+=key(e); } }); return d; }
+    // compute per-employee bucket first
+    var empBuckets = emps.map(function(e){
+      var W = weeks.map(function(wd){ var s=0; wd.forEach(function(d){ s+=(e.days[d]||0); }); return s; });
+      var b60=0,b6072=0,b7284=0,b84=0;
+      W.forEach(function(w){ if(w<=60)b60++; else if(w<=72)b6072++; else if(w<=84)b7284++; else b84++; });
+      return {b60,b6072,b7284,b84};
+    });
+    var a60={},a6072={},a7284={},a84={};
+    projOrder.forEach(function(p){a60[p]=a6072[p]=a7284[p]=a84[p]=0;});
+    emps.forEach(function(e,i){ if(e.proj in a60){ a60[e.proj]+=empBuckets[i].b60; a6072[e.proj]+=empBuckets[i].b6072; a7284[e.proj]+=empBuckets[i].b7284; a84[e.proj]+=empBuckets[i].b84; } });
+
+    // 合计 rows 4..15
+    projOrder.forEach(function(p,i){
+      var r=4+i;
+      setCell(ws3,'D'+r,{t:'s',v:'越南'}); setCell(ws3,'E'+r,{t:'s',v:p});
+      setCell(ws3,'F'+r,{t:'n',v:a60[p],f:'SUMIFS(周工时!AS:AS,周工时!$F:$F,合规率!$E'+r+')'});
+      setCell(ws3,'G'+r,{t:'n',v:a6072[p],f:'SUMIFS(周工时!AT:AT,周工时!$F:$F,合规率!$E'+r+')'});
+      setCell(ws3,'H'+r,{t:'n',v:a7284[p],f:'SUMIFS(周工时!AU:AU,周工时!$F:$F,合规率!$E'+r+')'});
+      setCell(ws3,'I'+r,{t:'n',v:a84[p],f:'SUMIFS(周工时!AV:AV,周工时!$F:$F,合规率!$E'+r+')'});
+      setCell(ws3,'J'+r,{t:'n',v:a60[p]+a6072[p]+a7284[p]+a84[p],f:'SUM(F'+r+':I'+r+')'});
+    });
+    setCell(ws3,'C5',{t:'s',v:'周数'});
+    setCell(ws3,'D16',{t:'s',v:'越南合计'});
+    var tot60=0,tot6072=0,tot7284=0,tot84=0;
+    projOrder.forEach(function(p){tot60+=a60[p];tot6072+=a6072[p];tot7284+=a7284[p];tot84+=a84[p];});
+    ['F','G','H','I','J'].forEach(function(L){
+      setCell(ws3,L+'16',{t:'n',v:{F:tot60,G:tot6072,H:tot7284,I:tot84,J:tot60+tot6072+tot7284+tot84}[L],f:'SUM('+L+'4:'+L+'15)'});
+    });
+
+    // 占比 rows 17..28
+    projOrder.forEach(function(p,i){
+      var r=17+i, hr=r-13;
+      setCell(ws3,'D'+r,{t:'s',v:'越南'}); setCell(ws3,'E'+r,{t:'s',v:p});
+      var J = a60[p]+a6072[p]+a7284[p]+a84[p];
+      ['F','G','H','I'].forEach(function(L){
+        var val = J? {F:a60,G:a6072,H:a7284,I:a84}[L][p]/J : 0;
+        setCell(ws3,L+r,{t:'n',v:val,f:L+hr+'/$J'+hr});
+      });
+      setCell(ws3,'J'+r,{t:'n',v:J?1:0,f:'J'+hr+'/$J'+hr});
+    });
+    setCell(ws3,'C17',{t:'s',v:'占比'});
+    setCell(ws3,'D29',{t:'s',v:'越南合计'});
+    var totJ = tot60+tot6072+tot7284+tot84;
+    ['F','G','H','I'].forEach(function(L){
+      var val = totJ? {F:tot60,G:tot6072,H:tot7284,I:tot84}[L]/totJ : 0;
+      setCell(ws3,L+'29',{t:'n',v:val,f:L+'16/$J16'});
+    });
+    setCell(ws3,'J29',{t:'n',v:totJ?1:0,f:'J16/$J16'});
+
+    // 合规率 rows 30..41
+    projOrder.forEach(function(p,i){
+      var r=30+i, hr=r-26, pr=r-13;
+      setCell(ws3,'D'+r,{t:'s',v:'越南'}); setCell(ws3,'E'+r,{t:'s',v:p});
+      var J = a60[p]+a6072[p]+a7284[p]+a84[p];
+      var Fv = a60[p]*100;
+      var g_ratio = J? a6072[p]/J : 0;
+      var g_score = g_ratio>0.40?0:(g_ratio>0.15?80:(g_ratio>0.05?95:100));
+      var Gv = a6072[p]*g_score;
+      var h_ratio = J? a7284[p]/J : 0;
+      var h_score = h_ratio>0.15?0:(h_ratio>0.05?80:(h_ratio>0.01?95:100));
+      var Hv = a7284[p]*h_score;
+      setCell(ws3,'F'+r,{t:'n',v:Fv,f:'F'+hr+'*100'});
+      setCell(ws3,'G'+r,{t:'n',v:Gv,f:'G'+hr+'*IF(G'+pr+'>40%,0,IF(G'+pr+'>15%,80,IF(G'+pr+'>5%,95,100)))'});
+      setCell(ws3,'H'+r,{t:'n',v:Hv,f:'H'+hr+'*IF(H'+pr+'>15%,0,IF(H'+pr+'>5%,80,IF(H'+pr+'>1%,95,IF(H'+pr+'<=1%,100))))'});
+      setCell(ws3,'I'+r,{t:'n',v:0});
+      var Jv = J? (Fv+Gv+Hv)/(J*100) : 0;
+      setCell(ws3,'J'+r,{t:'n',v:Jv,f:'SUM(F'+r+':I'+r+')/(J'+hr+'*100)'});
+    });
+    setCell(ws3,'C30',{t:'s',v:'合规率'});
+    setCell(ws3,'D42',{t:'s',v:'越南合计'});
+    var F42 = tot60*100;
+    var g42_ratio = totJ? tot6072/totJ : 0;
+    var g42_score = g42_ratio>0.40?0:(g42_ratio>0.15?80:(g42_ratio>0.05?95:100));
+    var G42 = tot6072*g42_score;
+    var h42_ratio = totJ? tot7284/totJ : 0;
+    var h42_score = h42_ratio>0.15?0:(h42_ratio>0.05?80:(h42_ratio>0.01?95:100));
+    var H42 = tot7284*h42_score;
+    setCell(ws3,'F42',{t:'n',v:F42,f:'F16*100'});
+    setCell(ws3,'G42',{t:'n',v:G42,f:'G16*IF(G29>40%,0,IF(G29>15%,80,IF(G29>5%,95,100)))'});
+    setCell(ws3,'H42',{t:'n',v:H42,f:'H16*IF(H29>15%,0,IF(H29>5%,80,IF(H29>1%,95,IF(H29<=1%,100))))'});
+    setCell(ws3,'I42',{t:'n',v:0});
+    setCell(ws3,'J42',{t:'n',v:totJ?(F42+G42+H42)/(totJ*100):0,f:'SUM(F42:I42)/(J16*100)'});
+    // M/N/O placeholder
+    setCell(ws3,'L38',{t:'s',v:'越南'});
+    setCell(ws3,'O38',{t:'n',v:0,f:'M38/(N38*100)'});
+
+    XLSX.utils.book_append_sheet(wb, ws3, '合规率');
+
+    var outName = '合规律_' + year + '-' + String(month).padStart(2,'0') + '.xlsx';
+    XLSX.writeFile(wb, outName);
+    setStatus('✅ Đã tạo xong và tải file: ' + outName, 'ok');
+  }
+
+  function setCell(ws, ref, obj){
+    ws[ref] = obj;
+  }
+
+  function unique(arr){ return arr.filter(function(v,i){ return arr.indexOf(v)===i; }); }
+
+  function showMissing(unknown, emps){
+    var box = document.getElementById('missingBox');
+    var html = '<p style="font-weight:700;color:#d33;margin-top:12px">⚠️ Các bộ phận chưa có mapping — gõ tên dự án (项目):</p><table class="missing"><tr><th>部门 (bộ phận)</th><th>项目 (dự án)</th></tr>';
+    unknown.forEach(function(d){
+      html += '<tr><td>' + esc(d) + '</td><td><input data-dept="'+esc(d)+'" placeholder="vd: 量产SBU-D03"></td></tr>';
+    });
+    html += '</table><button class="btn btn-blue" id="btnApplyMapping" style="margin-top:10px">💾 Lưu mapping & tạo lại</button>';
+    box.innerHTML = html;
+    box.style.display = 'block';
+    document.getElementById('btnApplyMapping').addEventListener('click', function(){
+      unknown.forEach(function(d){
+        var inp = box.querySelector('input[data-dept="'+cssesc(d)+'"]');
+        var v = inp ? inp.value.trim() : '';
+        if(v){ mapping[d]=v; saveOverride(d, v); }
+      });
+      buildOutput();
+    });
+  }
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function cssesc(s){ return String(s).replace(/"/g,'\\"'); }
+
+  // events
+  var drop = document.getElementById('drop');
+  var fileInput = document.getElementById('fileInput');
+  drop.addEventListener('click', function(){ fileInput.click(); });
+  fileInput.addEventListener('change', function(){ if(this.files[0]) handleFile(this.files[0]); });
+  drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', function(){ drop.classList.remove('drag'); });
+  drop.addEventListener('drop', function(e){ e.preventDefault(); drop.classList.remove('drag'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+  document.getElementById('btnGenerate').addEventListener('click', buildOutput);
+
+  // populate month selector
+  var ms = document.getElementById('monthSel');
+  for(var m=1;m<=12;m++){ var o=document.createElement('option'); o.value=m; o.textContent=m+'月'; ms.appendChild(o); }
+  var now = new Date();
+  ms.value = now.getMonth()+1;
+})();
+</script>
+</body>
+</html>
