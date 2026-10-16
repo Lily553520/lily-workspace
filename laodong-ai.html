@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>劳动关系 AI 助手</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+body{min-width:900px}
+.hidden{display:none!important}
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 64px)}
+.msg-list{flex:1;overflow-y:auto;padding:20px 24px;background:#fff;border:1px solid var(--border);border-radius:10px;margin:18px 0}
+.msg{display:flex;gap:10px;margin-bottom:16px;max-width:85%}
+.msg.user{flex-direction:row-reverse;margin-left:auto}
+.msg .avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.msg.bot .avatar{background:var(--blue-light)}
+.msg.user .avatar{background:#e8f0fa}
+.msg .bubble{background:#f5f8fc;border:1px solid var(--border);border-radius:12px;padding:11px 14px;font-size:13.5px;line-height:1.7;white-space:pre-wrap}
+.msg.user .bubble{background:var(--blue);color:#fff;border-color:var(--blue)}
+.msg .src{display:block;margin-top:6px;font-size:11.5px;color:var(--muted)}
+.msg.user .src{color:rgba(255,255,255,.75)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chip{background:#fff;border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:12.5px;cursor:pointer;transition:.15s;color:var(--text)}
+.chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.input-row{display:flex;gap:10px}
+.input-row input{flex:1;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px}
+.input-row input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(33,84,165,.12)}
+.ticket-note{font-size:12px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">🤖</div>
+    <div class="brand-text">
+      <h1>劳动关系 AI 助手</h1>
+      <p>Quan hệ lao động BG · 解答考勤 / 行为 / 保险 / 离职 thắc mắc của các bộ phận</p>
+    </div>
+  </div>
+  <div class="userbox"><span class="online-dot"></span><span class="uname">GoerMate · AI 助手</span></div>
+</header>
+
+<main class="main chat-wrap">
+  <div class="chips" id="chips"></div>
+
+  <div class="msg-list" id="msgList"></div>
+
+  <div class="input-row">
+    <input type="text" id="qInput" placeholder="Gõ câu hỏi… vd: 旷工 3 天 xử lý thế nào?">
+    <button class="btn btn-blue" id="btnSend">发送</button>
+  </div>
+  <div class="ticket-note">💡 AI trả lời từ kho quy định (考勤/行为/保险/离职). Câu hỏi chưa có đáp án → tự tạo phiếu gửi HR xử lý.</div>
+</main>
+
+<script>
+(function(){
+  // ===== Kho tri thức (từ 4 quy định đã đọc) =====
+  var KB = [
+    { k:['工作时间','làm việc','work time','time','giờ làm','上班时间','作息'],
+      a:'🕐 工作时间（越南歌尔，ZZ.7.7.3）：\n• 每周 6 天 × 8 小时 = 48 小时/周；午休 60 分钟（不计工时）。\n• 非操作序列：8:00–12:00，13:00–17:00。\n• 操作序列：分 7 组轮休（组1周一休…组7周日休），休息日与法定节假日重合 → 下个工作日补休。',
+      s:'ZZ.7.7.3 考勤休假管理制度' },
+    { k:['迟到','早退','旷工','đi muộn','về sớm','đi trễ','định nghĩa'],
+      a:'⏰ 定义（ZZ.7.7.3）：\n• 迟到：超上班时间 30 分钟内未到岗。\n• 早退：未到下班时间提前 30 分钟内离岗。\n• 旷工：超 30 分钟未到岗 / 提前 30 分钟以上离岗 / 未请假无故缺勤。',
+      s:'ZZ.7.7.3 考勤休假管理制度' },
+    { k:['年假','phép năm','annual leave','12天','nghỉ phép năm'],
+      a:'🌴 年假（ZZ.7.7.3）：每年 1/1–12/31 计算，共 12 天；入职满 5 年 +1 天，满 10 年 +2 天。',
+      s:'ZZ.7.7.3 考勤休假管理制度' },
+    { k:['请假','nghỉ phép','休假','事假','病假','婚假','丧假','护理假','产检假','leave'],
+      a:'📋 请假类别（ZZ.7.7.3）：事假（一年超 15 天须公司批准，最多 60 天）、病假、婚假（登记 3 个月内有效）、丧假、护理假、产检假、产假、哺乳假等。',
+      s:'ZZ.7.7.3 考勤休假管理制度' },
+    { k:['加班','tăng ca','overtime','OT','晚加班','休息日加班'],
+      a:'⚙️ 加班（ZZ.7.7.3）：\n• 晚加班：操作序列月初登记名单；非操作序列当天 24:00 前（夜班次日 12:00 前）提交，直接主管审批。\n• 休息日加班：提前 1 天提供经部门/中心负责人批准名单。\n• 法定节假日加班：提前 1 天，中心级审批。\n• 加班时数 = 申请时间与实际刷卡时间取小。',
+      s:'ZZ.7.7.3 考勤休假管理制度' },
+    { k:['考勤确认','xác nhận','chấm công xác nhận','打卡','刷脸','iGoer','G-HRMS'],
+      a:'📱 考勤确认（ZZ.7.7.3）：每月 2–4 日 24:00 前，在 iGoer APP 或 G-HRMS 确认上月出勤（工时/请假/加班统计）。未确认则以系统数据核算工资。',
+      s:'ZZ.7.7.3 考勤休假管理制度' },
+    { k:['补休','nghỉ bù','换休','调休'],
+      a:'🔁 补休（ZZ.7.7.3）：休息日加班可在加班后 6 个月内补休。',
+      s:'ZZ.7.7.3 考勤休假管理制度' },
+    { k:['奖励','khen thưởng','嘉奖','记功','记大功','thưởng','reward'],
+      a:'🏅 奖励（ZZ.7.7.7）：嘉奖 10万–30万 VNĐ；记功 30万–200万 VNĐ；记大功 200万–400万 VNĐ（防事故、抢险、检举违纪、获劳模称号、拾金不昧等）。',
+      s:'ZZ.7.7.7 员工行为规范及奖惩管理规定' },
+    { k:['处罚','kỷ luật','处分','警告','革职','开除','惩罚','xử lý kỷ luật'],
+      a:'⚠️ 处罚种类（由轻到重，ZZ.7.7.7）：\n1) 警告（书面）；2) 延长调薪期限（≤6个月）；3) 革职（管理层）；4) 开除（终止合同，仅法律允许情形）。\n• 3个月内受书面警告再犯 → 延长调薪/革职；6个月内再犯 → 开除。',
+      s:'ZZ.7.7.7 员工行为规范及奖惩管理规定' },
+    { k:['开除','sa thải','严重违纪','终止合同','đuổi việc','解雇'],
+      a:'🚫 开除（严重违纪，ZZ.7.7.7）：盗窃/赌博/贪污/吸毒/故意伤人、泄露商业秘密/侵犯知识产权、旷工连续5天或30天累计5天或365天累计20天、性骚扰/婚外情、受贿、泄露工资、提供虚假人事信息（假身份证/学历/技能证书）等。',
+      s:'ZZ.7.7.7 员工行为规范及奖惩管理规定' },
+    { k:['打架','đánh nhau','xô xát','冲突','gây thương tích'],
+      a:'👊 打架（ZZ.7.7.7）：首次、轻微擦伤、因争执/自卫、主动道歉并弥补后果 → 警告/教育。情节严重（未道歉、故意伤害、致残）→ 可开除。',
+      s:'ZZ.7.7.7 员工行为规范及奖惩管理规定' },
+    { k:['着装','trang phục','服装','穿衣服','mặc quần áo','dress code'],
+      a:'👔 着装（ZZ.7.7.7）：女员工不得穿露脐装、短裙（裙摆不过膝上10cm）、吊带、透视、露背/露腰/低胸；男员工不得穿短裤、吊带或赤膊。',
+      s:'ZZ.7.7.7 员工行为规范及奖惩管理规定' },
+    { k:['赔偿','bồi thường','损坏','财产损失','thiệt hại'],
+      a:'💸 经济赔偿（ZZ.7.7.7）：故意损坏 → 按原价；过失 → 分级（损失≤150万: 0–60万；150万–300万: 60万–150万；300万–1500万: 150万–800万；1500万–3000万: 800万–3000万）。',
+      s:'ZZ.7.7.7 员工行为规范及奖惩管理规定' },
+    { k:['保险','bảo hiểm','社保','BHXH','病假','失业','产假','工伤'],
+      a:'🛡️ 保险制度（ZZ.7.7.13 越南歌尔保险管理制度）：病假、产假、康复、失业、工伤等，按越南社保法执行（含 thai sản 生育、thất nghiệp 失业、tai nạn lao động 工伤）。',
+      s:'ZZ.7.7.13 越南歌尔保险管理制度' },
+    { k:['失业','thất nghiệp','失业保险','thất nghiệp điều kiện'],
+      a:'📉 失业保险（ZZ.7.7.13）：24个月合同须投保满12个月 + 3个月内到就业中心登记 + 登记后10天未找到工作。补助 = 60% × 终止前6个月平均工资（不超地区最低工资5倍）；投保12–36个月得3个月补助，每满12个月+1个月，最多12个月。',
+      s:'ZZ.7.7.13 越南歌尔保险管理制度' },
+    { k:['产假','thai sản','生育','maternity','sinh con'],
+      a:'🤱 产假/生育（ZZ.7.7.13）：按社保法第52–54条执行。申请材料：出生证明/出生登记摘录（公证）、医院证明等。流产/堕胎/胎死：出院证明或病假证明（注明胎龄周数）。',
+      s:'ZZ.7.7.13 越南歌尔保险管理制度' },
+    { k:['病假','ốm đau','nghỉ ốm','sick leave','康复','dưỡng sức'],
+      a:'🏥 病假/康复（ZZ.7.7.13）：病假按社保法第43条。病后30天内返岗身体未恢复 → 可休养康复5–10天（长期治疗10天/手术7天/其他5天），每天补助 = 30% 参照标准。',
+      s:'ZZ.7.7.13 越南歌尔保险管理制度' },
+    { k:['离职','nghỉ việc','resign','thôi việc','辞职','离职交接'],
+      a:'📤 离职（相关流程）：员工离职前一天截止考勤记录（ZZ.7.7.3）。离职交接/审批流程另有专项文件（越南歌尔员工离职交接及办理流程、员工离职沟通/审批/交接流程）——正在补充进知识库。',
+      s:'ZZ.7.7.3 + 离职流程（补充中）' },
+  ];
+
+  var SUGGEST = ['工作时间怎么安排？','年假多少天？','旷工 3 天怎么处理？','哪些行为会被开除？','加班怎么算？','失业保险条件是什么？','产假要交什么材料？','着装有什么要求？'];
+
+  var list = document.getElementById('msgList');
+  var chips = document.getElementById('chips');
+  var input = document.getElementById('qInput');
+
+  function addMsg(text, isUser, src){
+    var d = document.createElement('div');
+    d.className = 'msg ' + (isUser ? 'user' : 'bot');
+    d.innerHTML = '<div class="avatar">'+(isUser?'👤':'🤖')+'</div><div class="bubble">'+escapeHtml(text)+(src?'<span class="src">📄 '+escapeHtml(src)+'</span>':'')+'</div>';
+    list.appendChild(d);
+    list.scrollTop = list.scrollHeight;
+  }
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  function answer(q){
+    var t = q.toLowerCase();
+    var best = null, bestScore = 0;
+    for (var i=0;i<KB.length;i++){
+      var score = 0;
+      KB[i].k.forEach(function(kw){ if (t.indexOf(kw.toLowerCase()) >= 0) score++; });
+      if (score > bestScore){ bestScore = score; best = KB[i]; }
+    }
+    if (best && bestScore > 0){ return best; }
+    return null;
+  }
+
+  function respond(q){
+    addMsg(q, true);
+    var r = answer(q);
+    if (r){
+      addMsg(r.a, false, r.s);
+    } else {
+      addMsg('🤔 Xin lỗi, tôi chưa tìm thấy đáp án chính xác cho câu hỏi này trong kho quy định.\n\n📩 Câu hỏi của bạn sẽ được chuyển thành phiếu hỗ trợ gửi tới HR (quan hệ lao động) để trả lời. Sau khi có đáp án, câu hỏi sẽ được bổ sung vào kho tri thức.', false);
+    }
+  }
+
+  function renderChips(){
+    SUGGEST.forEach(function(s){
+      var c = document.createElement('div');
+      c.className = 'chip'; c.textContent = s;
+      c.addEventListener('click', function(){ respond(s); });
+      chips.appendChild(c);
+    });
+  }
+
+  document.getElementById('btnSend').addEventListener('click', function(){
+    var v = input.value.trim();
+    if (!v) return;
+    input.value = '';
+    respond(v);
+  });
+  input.addEventListener('keydown', function(e){ if (e.key==='Enter'){ document.getElementById('btnSend').click(); } });
+
+  renderChips();
+  addMsg('👋 Xin chào! Tôi là trợ lý AI quan hệ lao động.\n\nTôi có thể giải đáp các thắc mắc về:\n• 🕐 考勤 (chấm công, nghỉ phép, tăng ca)\n• 🚫 行为/奖惩 (khen thưởng, kỷ luật)\n• 🛡️ 保险 (bảo hiểm: ốm đau, thai sản, thất nghiệp)\n• 📤 离职 (nghỉ việc)\n\nHãy gõ câu hỏi, hoặc bấm vào câu gợi ý bên dưới 👇', false);
+})();
+</script>
+</body>
+</html>
