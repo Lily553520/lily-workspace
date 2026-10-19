@@ -209,6 +209,12 @@ tr.hl-red:hover{background:#ffdede}
           <label>📆 每月日期 (几号)</label>
           <select id="fMonthDay"></select>
         </div>
+        <div class="field" id="skipSunField" style="display:none">
+          <label>📅 周日 (Chủ Nhật)</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;color:var(--text);font-weight:400">
+            <input type="checkbox" id="fSkipSunday" style="width:auto;height:auto"> 跳过周日 · 周日不提醒 (nghỉ Chủ Nhật)
+          </label>
+        </div>
         <div class="field">
           <label>💬 提醒内容 (可选)</label>
           <textarea id="fContent" placeholder="提醒的短信/邮件内容… 🍓"></textarea>
@@ -306,7 +312,7 @@ tr.hl-red:hover{background:#ffdede}
       to: r.to || '', content: r.content || '', repeat: r.repeat || 'once',
       weekdays: Array.isArray(r.weekdays) ? r.weekdays : [],
       star: !!r.star, category: r.category || '',
-      monthDay: r.monthDay || '',
+      monthDay: r.monthDay || '', skipSunday: !!r.skipSunday,
       archived: !!r.archived, archivedAt: r.archivedAt || null
     };
   }
@@ -408,7 +414,7 @@ tr.hl-red:hover{background:#ffdede}
     return arr.map(function(w){ return WD_NAMES[w] || w; }).join('·');
   }
   function repeatTag(r){
-    if(r.repeat==='daily')  return ' <span class="tag tag-igoer">🔁 每天</span>';
+    if(r.repeat==='daily')  return ' <span class="tag tag-igoer">🔁 每天' + (r.skipSunday ? ' · 除周日' : '') + '</span>';
     if(r.repeat==='weekly') return ' <span class="tag tag-igoer">🔁 每周</span>';
     if(r.repeat==='monthly') return ' <span class="tag tag-igoer">🔁 每月 · ' + (r.monthDay || (r.date ? String(parseInt(r.date.slice(-2),10)) : '')) + '号</span>';
     if(r.repeat==='weekdays') return ' <span class="tag tag-igoer">🔁 每周 · ' + wdLabel(r.weekdays) + '</span>';
@@ -433,7 +439,7 @@ tr.hl-red:hover{background:#ffdede}
   function firesToday(r){
     var now = new Date();
     if(r.repeat==='once') return r.date === isoDate(now);
-    if(r.repeat==='daily') return true;
+    if(r.repeat==='daily') return !(r.skipSunday && now.getDay()===0);
     if(r.repeat==='weekly'){ return now.getDay() === (new Date(r.date+'T00:00:00')).getDay(); }
     if(r.repeat==='weekdays'){ var set=(r.weekdays&&r.weekdays.length?r.weekdays:[1,2,3,4,5]).map(function(w){return w%7;}); return set.indexOf(now.getDay())>=0; }
     if(r.repeat==='monthly'){ var md = r.monthDay ? parseInt(r.monthDay,10) : (new Date(r.date+'T00:00:00')).getDate(); return now.getDate() === md; }
@@ -445,8 +451,12 @@ tr.hl-red:hover{background:#ffdede}
     if(r.repeat==='once'){ return new Date(r.date + 'T' + (r.time||'00:00') + ':00'); }
     var start = new Date(r.date + 'T00:00:00');
     if(r.repeat==='daily'){
-      var todayAt = atDate(now, t.hh, t.mm);
-      return now.getTime() <= todayAt.getTime() ? todayAt : atDate(addDays(now,1), t.hh, t.mm);
+      var cand = atDate(now, t.hh, t.mm);
+      if(cand.getTime() <= now.getTime() || (r.skipSunday && cand.getDay()===0)){
+        cand = addDays(cand, 1);
+        while(r.skipSunday && cand.getDay()===0) cand = addDays(cand, 1);
+      }
+      return cand;
     }
     if(r.repeat==='weekly'){
       var wd0 = start.getDay();
@@ -642,7 +652,8 @@ tr.hl-red:hover{background:#ffdede}
       to: document.getElementById('fTo').value.trim() || 'lily.ngocly@goertek.com',
       content: document.getElementById('fContent').value.trim(),
       category: document.getElementById('fCat').value,
-      monthDay: repeat==='monthly' ? document.getElementById('fMonthDay').value : ''
+      monthDay: repeat==='monthly' ? document.getElementById('fMonthDay').value : '',
+      skipSunday: repeat==='daily' ? document.getElementById('fSkipSunday').checked : false
     };
   }
   function resetForm(){
@@ -656,6 +667,8 @@ tr.hl-red:hover{background:#ffdede}
     document.getElementById('fMonthDay').value='';
     document.getElementById('wdField').style.display='none';
     document.getElementById('mdField').style.display='none';
+    document.getElementById('skipSunField').style.display='none';
+    document.getElementById('fSkipSunday').checked=false;
     renderWdChips([1,2,3,4,5]);
     document.getElementById('btnAdd').textContent='🧸 ＋ 添加到列表';
     document.getElementById('btnCancelEdit').style.display='none';
@@ -670,12 +683,12 @@ tr.hl-red:hover{background:#ffdede}
       var i = findById(editingId);
       if(i>=0){
         list[i].title=f.title; list[i].date=f.date; list[i].time=f.time; list[i].method=f.method;
-        list[i].repeat=f.repeat; list[i].weekdays=f.weekdays; list[i].to=f.to; list[i].content=f.content; list[i].category=f.category; list[i].monthDay=f.monthDay;
+        list[i].repeat=f.repeat; list[i].weekdays=f.weekdays; list[i].to=f.to; list[i].content=f.content; list[i].category=f.category; list[i].monthDay=f.monthDay; list[i].skipSunday=f.skipSunday;
         save(); render(); resetForm();
         toast('✅ 已保存修改：' + f.title);
       } else { resetForm(); }
     } else {
-      list.push({ id: genId(), title:f.title, date:f.date, time:f.time, method:f.method, repeat:f.repeat, weekdays:f.weekdays, to:f.to, content:f.content, category:f.category, monthDay:f.monthDay, archived:false });
+      list.push({ id: genId(), title:f.title, date:f.date, time:f.time, method:f.method, repeat:f.repeat, weekdays:f.weekdays, to:f.to, content:f.content, category:f.category, monthDay:f.monthDay, skipSunday:f.skipSunday, archived:false });
       save(); render(); resetForm();
       document.getElementById('fTitle').focus();
       toast('✅ 已添加：' + f.title + ' 🎀');
@@ -702,6 +715,8 @@ tr.hl-red:hover{background:#ffdede}
       document.getElementById('wdField').style.display='none';
     }
     document.getElementById('mdField').style.display = (r.repeat==='monthly') ? 'block' : 'none';
+    document.getElementById('skipSunField').style.display = (r.repeat==='daily') ? 'block' : 'none';
+    document.getElementById('fSkipSunday').checked = !!r.skipSunday;
     document.getElementById('btnAdd').textContent='💾 保存修改';
     document.getElementById('btnCancelEdit').style.display='';
     toast('✏️ 正在编辑：' + r.title);
@@ -771,6 +786,7 @@ tr.hl-red:hover{background:#ffdede}
   document.getElementById('fRepeat').addEventListener('change', function(){
     document.getElementById('wdField').style.display = (this.value==='weekdays') ? 'block' : 'none';
     document.getElementById('mdField').style.display = (this.value==='monthly') ? 'block' : 'none';
+    document.getElementById('skipSunField').style.display = (this.value==='daily') ? 'block' : 'none';
     if(this.value==='monthly'){
       var d = document.getElementById('fDate').value;
       var dom = d ? parseInt(d.slice(-2),10) : new Date().getDate();
