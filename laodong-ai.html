@@ -263,15 +263,19 @@ body{min-width:900px}
 
   function answer(q){
     var t = norm(q);
+    var qw = t.split(/[^a-z0-9\u4e00-\u9fff]+/).filter(function(w){ return w.length >= 2; });
     var best = null, bestScore = 0;
     for (var i=0;i<KB.length;i++){
       var score = 0;
+      // 1) từ khóa khớp chuỗi con trực tiếp — trọng số cao
       for (var j=0;j<KB[i].k.length;j++){
         var kw = norm(KB[i].k[j]);
-        if (kw && t.indexOf(kw) >= 0){
-          // từ khóa càng dài & càng cụ thể → trọng số càng cao
-          score += kw.length;
-        }
+        if (kw && t.indexOf(kw) >= 0) score += kw.length * 3;
+      }
+      // 2) khớp theo TỪ (word overlap) với từ khóa + nội dung đáp án — bắt thêm nhiều cách hỏi
+      var hay = norm(KB[i].k.join(' ') + ' ' + KB[i].a);
+      for (var w=0;w<qw.length;w++){
+        if (hay.indexOf(qw[w]) >= 0) score += qw[w].length;
       }
       if (score > bestScore){ bestScore = score; best = KB[i]; }
     }
