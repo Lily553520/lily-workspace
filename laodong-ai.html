@@ -50,12 +50,12 @@ body{min-width:900px}
     <input type="text" id="qInput" placeholder="Gõ câu hỏi… vd: 旷工 3 天 xử lý thế nào? / 性骚扰 báo ai?">
     <button class="btn btn-blue" id="btnSend">发送</button>
   </div>
-  <div class="ticket-note">💡 AI trả lời từ kho 101 quy định HR (考勤/行为/保险/合同/女职工/CSR). Câu hỏi chưa có đáp án → tự tạo phiếu gửi HR xử lý.</div>
+  <div class="ticket-note">💡 AI trả lời từ kho 2582 quy định HR (考勤/行为/保险/合同/女职工/CSR). Câu hỏi chưa có đáp án → tự tạo phiếu gửi HR xử lý.</div>
 </main>
 
 <script>
 (function(){
-  // ===== Kho tri thức (từ 101 quy định HR GoerTek đã đọc) =====
+  // ===== Kho tri thức (từ 2582 quy định HR GoerTek đã đọc) =====
   // Mỗi mục: k = từ khóa (tiếng Trung + tiếng Việt), a = đáp án, s = nguồn
   var KB = [
     // ---- 考勤 (ZZ.7.7.3) ----
@@ -80,6 +80,9 @@ body{min-width:900px}
     { k:['补休','nghỉ bù','换休','调休','nghỉ đổi'],
       a:'🔁 补休（ZZ.7.7.3）：休息日加班可在加班后 6 个月内补休。',
       s:'ZZ.7.7.3 越南歌尔考勤休假管理制度' },
+    { k:['补卡','补刷卡','补刷','bù quẹt thẻ','bù thẻ','quẹt bù','quên quẹt thẻ','quá số lần bù thẻ','bù quẹt thẻ mấy lần','bù thẻ bao nhiêu lần','bù quẹt thẻ 5 lần'],
+      a:'💳 补卡/补刷卡（bù quẹt thẻ，ZZ.7.7.3）：\n• 因个人原因造成的补卡，每月不得超过 4 次。\n• 超过 4 次（即第 5 次起）→ 按照《越南歌尔员工行为规范及奖惩管理规定》（ZZ.7.7.7）执行（可能被处分/处罚）。\n• 补卡须员工本人在考勤系统（G-HRMS / iGoer）按流程登记，不得请人代补或代他人补卡。',
+      s:'ZZ.7.7.3 越南歌尔考勤休假管理制度 + ZZ.7.7.7 员工行为规范及奖惩管理规定' },
 
     // ---- 行为/奖惩 (ZZ.7.7.7) ----
     { k:['奖励','khen thưởng','嘉奖','记功','记大功','thưởng','reward','khen'],
@@ -244,6 +247,20 @@ body{min-width:900px}
       .replace(/đ/g,'d');
   }
 
+  // ===== Chào hỏi / cảm ơn / hỏi danh tính (trả lời tự nhiên) =====
+  var GREETS = [
+    { re:/^(alo|a lo|chao|xin chao|hello|hi|hey|chao ban|hi ban)\b/, a:'👋 Chào bạn! Tôi là trợ lý AI quan hệ nhân viên (员工关系 AI 助手) của GoerTek Việt Nam.\n\nTôi có thể giải đáp về: chấm công, nghỉ phép, tăng ca, hợp đồng, khen thưởng - kỷ luật, bảo hiểm, CSR... Bạn cần hỗ trợ gì?' },
+    { re:/(cam on|thanks|thank you|thankyou|tks)/, a:'😊 Không có gì! Nếu còn thắc mắc gì cứ hỏi nhé.' },
+    { re:/(ban la ai|may la ai|ai day|你是谁)/, a:'🤖 Tôi là trợ lý AI quan hệ nhân viên (员工关系 AI 助手) của GoerTek Việt Nam — giải đáp thắc mắc về chấm công, nghỉ phép, tăng ca, hợp đồng, khen thưởng - kỷ luật, bảo hiểm, CSR...' },
+  ];
+  function greet(q){
+    var t = norm(q).replace(/[^a-z0-9]+/g, ' ').trim();
+    for (var i=0;i<GREETS.length;i++){
+      if (GREETS[i].re.test(t)) return GREETS[i].a;
+    }
+    return null;
+  }
+
   function answer(q){
     var t = norm(q);
     var best = null, bestScore = 0;
@@ -278,6 +295,8 @@ body{min-width:900px}
 
   function respond(q){
     addMsg(q, true);
+    var g = greet(q);
+    if (g){ addMsg(g, false); return; }
     var r = answer(q);
     if (r){
       addMsg(r.a, false, r.s);
