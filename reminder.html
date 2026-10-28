@@ -385,6 +385,16 @@ tr.hl-red:hover{background:#ffdede}
       });
     }, 600);
   }
+  /* dọn các mục đã bị xóa trên scheduler (tránh tab cũ / cache làm sống lại) */
+  async function applyTombstones(){
+    var r = await srvFetch('/deleted-ids', { method:'GET' });
+    if(!r || !r.ok) return;
+    var ids = null; try{ ids = await r.json(); }catch(e){ return; }
+    if(!Array.isArray(ids) || !ids.length) return;
+    var before = list.length;
+    list = list.filter(function(x){ return ids.indexOf(x.id) < 0; });
+    if(list.length !== before){ save(); render(); }
+  }
   async function syncFromCloud(){
     setSync('💾 已保存 · ⏳ 检查备份…');
     var remote = await srvPing();
@@ -957,6 +967,7 @@ tr.hl-red:hover{background:#ffdede}
   renderWdChips([1,2,3,4,5]);
   render();
   syncFromCloud();
+  applyTombstones();
 
   setInterval(function(){
     updateCountdowns();
