@@ -268,7 +268,7 @@ tr.hl-red:hover{background:#ffdede}
 
   </div>
 
-  <div class="footer">数据自动同步至云端 (Supabase) · 点击 <b>💾 提交</b> 发送到提醒服务器 · Made with 💖</div>
+  <div class="footer">数据自动备份到本机提醒服务器 (127.0.0.1:8790) · 点击 <b>💾 提交</b> 让提醒到点发邮件 · Made with 💖</div>
 </div>
 
 <!-- 确认弹窗 -->
@@ -339,52 +339,65 @@ tr.hl-red:hover{background:#ffdede}
     scheduleCloudSave();
   }
 
-  /* ---------- 云端同步 (Supabase Storage) ---------- */
-  var SB = { url:'', key:'' };
-  function initCloud(){
-    try{ SB.url = (localStorage.getItem('sb_url')||'').replace(/\/+$/,''); SB.key = localStorage.getItem('sb_key')||''; }catch(e){}
-  }
-  function cloudReady(){ return !!(SB.url && SB.key); }
-  function cloudPath(){ return 'reminders/reminders.json'; }
+  /* ---------- 同步：备份到本机提醒服务器 (127.0.0.1:8790) ---------- */
+  var SRV = 'http://127.0.0.1:8790';
+  var srvOk = false;
   function setSync(txt){ document.getElementById('syncBadge').textContent = txt; }
-  async function cloudLoad(){
-    if(!cloudReady()) return null;
-    try{
-      var r = await fetch(SB.url + '/storage/v1/object/public/files/' + cloudPath(), { cache:'no-store' });
-      if(!r.ok) return null;
-      var j = await r.json();
-      return Array.isArray(j) ? j : null;
-    }catch(e){ return null; }
+  function badge(){
+    setSync(srvOk ? '💾 已保存 · 🟢 本机备份在线' : '💾 已保存 · ⚪ 本机备份离线');
   }
-  async function cloudSave(){
-    if(!cloudReady()) return false;
+  function initCloud(){ /* 不再使用云端数据库（Supabase 项目已停用），改存本机 */ }
+  async function srvFetch(p2, opt){
+    var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = setTimeout(function(){ if(ctl){ try{ ctl.abort(); }catch(e){} } }, 2500);
     try{
-      var h = { apikey: SB.key, Authorization: 'Bearer ' + SB.key, 'Content-Type': 'application/json', 'x-upsert': 'true' };
-      var r = await fetch(SB.url + '/storage/v1/object/files/' + cloudPath(), { method:'POST', headers:h, body: JSON.stringify(list) });
-      return r.ok;
-    }catch(e){ return false; }
+      var o = Object.assign({ cache:'no-store' }, opt || {});
+      if(ctl) o.signal = ctl.signal;
+      var r = await fetch(SRV + p2, o);
+      clearTimeout(timer);
+      return r;
+    }catch(e){ clearTimeout(timer); return null; }
+  }
+  async function srvPing(){
+    var r = await srvFetch('/state', { method:'GET' });
+    if(!r || !r.ok){ srvOk = false; return null; }
+    srvOk = true;
+    try{ var j = await r.json(); return Array.isArray(j) ? j : null; }catch(e){ return null; }
+  }
+  async function srvSave(){
+    if(!srvOk) return false;
+    var r = await srvFetch('/state', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(list)
+    });
+    var ok = !!(r && r.ok);
+    if(!ok) srvOk = false;
+    return ok;
   }
   var cloudTimer = null;
   function scheduleCloudSave(){
-    if(!cloudReady()) return;
     clearTimeout(cloudTimer);
     cloudTimer = setTimeout(function(){
-      cloudSave().then(function(ok){ setSync(ok ? '☁️ 已同步' : '⚠️ 同步失败'); });
-    }, 800);
+      if(!srvOk){ badge(); return; }
+      srvSave().then(function(ok){
+        setSync(ok ? '💾 已保存 · 🟢 本机备份在线' : '💾 已保存 · ⚪ 本机备份离线');
+      });
+    }, 600);
   }
   async function syncFromCloud(){
-    if(!cloudReady()){ setSync('💾 仅本地'); return; }
-    setSync('☁️ 同步中…');
-    var remote = await cloudLoad();
-    if(remote && remote.length){
+    setSync('💾 已保存 · ⏳ 检查备份…');
+    var remote = await srvPing();
+    if(!srvOk){ badge(); return; }
+    if((!list || !list.length) && remote && remote.length){
       list = remote.map(normalize);
-      save();
-      setSync('☁️ 已同步');
+      localStorage.setItem(KEY, JSON.stringify(list));
+      toast('已从本机备份恢复 ' + list.length + ' 条提醒');
+      render();
     } else {
-      var ok = await cloudSave();
-      setSync(ok ? '☁️ 已同步' : '⚠️ 同步失败');
+      srvSave();
     }
-    render();
+    badge();
   }
 
   /* ---------- toast / 确认弹窗 ---------- */
