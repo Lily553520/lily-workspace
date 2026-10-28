@@ -754,6 +754,25 @@ tr.hl-red:hover{background:#ffdede}
     save(); render();
     toast(list[i].star ? '⭐ 已置顶：' + list[i].title : '已取消置顶：' + list[i].title);
   }
+  /* 删除必须同时删掉本机调度器里的记录，否则到点仍会发邮件 */
+  function srvDelete(ids){
+    if(!ids || !ids.length) return;
+    // 1) 备份列表 /state 立即同步
+    srvSave();
+    // 2) 真正的删除：DELETE /reminders/<id>（失败则用 POST {delete:[...]} 兜底）
+    ids.forEach(function(id){
+      srvFetch('/reminders/' + encodeURIComponent(id), { method:'DELETE' })
+        .then(function(r){
+          if(r && r.ok) return null;
+          return srvFetch('/reminders', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify({ delete: ids })
+          });
+        })
+        .catch(function(){});
+    });
+  }
   function delItem(id){
     var i = findById(id); if(i<0) return;
     var name = list[i].title;
@@ -761,7 +780,8 @@ tr.hl-red:hover{background:#ffdede}
       var j = findById(id);
       if(j<0) return;
       list.splice(j,1); save(); render();
-      toast('🗑 已删除：' + name);
+      srvDelete([id]);
+      toast(srvOk ? ('🗑 已删除：' + name) : ('🗑 已从本页删除：' + name + '（本机服务器离线，调度器里的记录可能还在）'));
     });
   }
 
@@ -783,7 +803,11 @@ tr.hl-red:hover{background:#ffdede}
         if(!Array.isArray(j)) throw new Error('文件格式不是提醒数组');
         var mapped = j.map(normalize);
         confirmDialog('导入将用文件中的 ' + mapped.length + ' 条提醒替换当前 ' + list.length + ' 条，确定吗？', function(){
+          var keepIds = {};
+          mapped.forEach(function(r){ keepIds[r.id] = 1; });
+          var gone = list.filter(function(r){ return !keepIds[r.id]; }).map(function(r){ return r.id; });
           list = mapped; save(); render();
+          srvDelete(gone);
           toast('✅ 已导入 ' + mapped.length + ' 条提醒');
         });
       }catch(e){ toast('⚠️ 导入失败：' + e.message); }
