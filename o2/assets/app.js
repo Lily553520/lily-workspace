@@ -415,6 +415,11 @@
           <div class="s">文件只在本机浏览器解析，不上传任何服务器</div>
         </div>
         <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.csv" class="hidden">
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="btnImportPack">导入数据包 (.json)</button>
+          <span class="muted">把之前在别的设备导出的数据包，或本机脚本生成的数据包一次性导入</span>
+        </div>
+        <input type="file" id="packInput" accept=".json,application/json" class="hidden">
         <div id="uploadResult" style="margin-top:16px"></div>
       </div>`;
 
@@ -427,6 +432,46 @@
       handleFiles(Array.from(e.dataTransfer.files || []));
     };
     input.onchange = () => { handleFiles(Array.from(input.files || [])); input.value = ''; };
+
+    const packInput = $('packInput');
+    $('btnImportPack').onclick = () => packInput.click();
+    packInput.onchange = () => { importPack(Array.from(packInput.files || [])[0], $('uploadResult')); packInput.value = ''; };
+  }
+
+  /* -------- 数据包导入 -------- */
+  async function importPack(file, boxEl) {
+    const box = boxEl || $('uploadResult');
+    if (!file) return;
+    box.innerHTML = '<div class="empty">读取数据包…</div>';
+    try {
+      const txt = await file.text();
+      const pack = JSON.parse(txt);
+      const list = Array.isArray(pack) ? pack : pack.datasets;
+      if (!Array.isArray(list) || !list.length) throw new Error('数据包里没有 datasets');
+      const rows = [];
+      for (const d of list) {
+        const sheets = (d.sheets || []).map((s) => ({
+          name: s.name || 'Sheet',
+          aoa: Array.isArray(s.aoa) ? s.aoa : [],
+        }));
+        const totalRows = d.rows != null ? d.rows : sheets.reduce((a, s) => a + Math.max(0, s.aoa.length - 1), 0);
+        await dsPut({
+          id: uid(), name: d.name || '未命名数据',
+          size: d.size || 0, uploadedAt: d.uploadedAt || Date.now(),
+          rows: totalRows, sheets,
+        });
+        rows.push(`<tr><td>${esc(d.name || '未命名数据')}</td><td>${sheets.length}</td><td>${totalRows.toLocaleString()}</td><td><span class="badge">已导入</span></td></tr>`);
+      }
+      await logAdd('导入数据包', `${file.name} · ${list.length} 个数据表`);
+      box.innerHTML = `<div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>数据表</th><th>工作表</th><th>行数</th><th>状态</th></tr></thead>
+        <tbody>${rows.join('')}</tbody></table></div>
+        <div class="row" style="margin-top:14px"><button class="btn green" id="goDs2">去数据管理</button></div>`;
+      $('goDs2').onclick = () => go('datasets');
+      toast(`已导入 ${list.length} 个数据表`);
+    } catch (e) {
+      box.innerHTML = '<div class="empty" style="color:#D93025">导入失败：' + esc(e.message) + '</div>';
+    }
   }
 
   async function handleFiles(files) {
@@ -746,7 +791,9 @@
           <div class="k">存储位置</div><div>浏览器 IndexedDB（仅本机、仅本浏览器）</div>
         </div>
         <div class="row" style="margin-top:14px">
-          <button class="btn" id="s_backup">导出账号备份 (JSON)</button>
+          <button class="btn" id="s_backup">导出数据包 (JSON)</button>
+          <button class="btn" id="s_import">导入数据包</button>
+          <input type="file" id="s_pack" accept=".json,application/json" class="hidden">
           <button class="btn danger" id="s_wipe">清空全部数据</button>
         </div>
         <div class="muted" style="margin-top:10px">换电脑或换浏览器：先在「数据管理」逐个导出 Excel，或在新设备上重新上传。</div>
@@ -781,6 +828,18 @@
       a.download = 'O2平台备份_' + new Date().toISOString().slice(0, 10) + '.json';
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    };
+
+    $('s_import').onclick = () => $('s_pack').click();
+    $('s_pack').onchange = async () => {
+      const f = ($('s_pack').files || [])[0];
+      $('s_pack').value = '';
+      if (!f) return;
+      const tmp = document.createElement('div');
+      tmp.id = 'importOut';
+      v.insertBefore(tmp, v.firstChild);
+      await importPack(f, tmp);
+      list.length = 0;
     };
 
     $('s_wipe').onclick = async () => {
