@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>U01H O2 数据集成平台 · 独立版</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D3B1E'/%3E%3Ctext x='32' y='43' font-size='30' font-family='Arial' font-weight='bold' fill='%2300A651' text-anchor='middle'%3EO2%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+
+<!-- ================= 登录 ================= -->
+<div class="auth-wrap" id="authWrap">
+  <div class="auth-card" id="authCard">
+    <!-- 由 JS 渲染：登录 / 初始化 / 找回 -->
+    <div class="logo-row"><div class="logo-badge">O2</div></div>
+    <h1>O2 数据集成平台</h1>
+    <div class="sub">U01H · 独立部署版 · 请登录后访问</div>
+    <div id="authBody"></div>
+    <div class="msg" id="authMsg"></div>
+    <div class="auth-foot" id="authFoot"></div>
+  </div>
+</div>
+
+<!-- ================= 主应用 ================= -->
+<div class="shell" id="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="t">O2 数据集成平台</div>
+      <div class="s">U01H · 独立版 v1.0</div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-item active" data-view="dashboard"><span class="ic">◧</span>概览</div>
+      <div class="nav-sec">数据</div>
+      <div class="nav-item" data-view="upload"><span class="ic">↑</span>数据上传</div>
+      <div class="nav-item" data-view="datasets"><span class="ic">▤</span>数据管理</div>
+      <div class="nav-item" data-view="analysis"><span class="ic">◔</span>分析中心</div>
+      <div class="nav-sec">智能</div>
+      <div class="nav-item" data-view="chat"><span class="ic">✦</span>AI 助手</div>
+      <div class="nav-sec">系统</div>
+      <div class="nav-item" data-view="settings"><span class="ic">⚙</span>设置</div>
+    </nav>
+    <div class="who">
+      <div class="avatar" id="whoAvatar">L</div>
+      <div class="n" id="whoName">—</div>
+      <div class="out" id="btnLogout">退出</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <h2 id="viewTitle">概览</h2>
+      <span class="crumb" id="viewCrumb"></span>
+      <span class="spacer"></span>
+      <span class="pill" id="storagePill">本地存储 · 独立运行</span>
+    </div>
+    <div class="content" id="view"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="assets/xlsx.full.min.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
